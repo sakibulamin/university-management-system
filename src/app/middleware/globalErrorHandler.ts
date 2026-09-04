@@ -3,8 +3,9 @@ import httpStatus from "http-status";
 import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
 import config from "../config/index.js";
-import { Prisma } from "../../generated/prisma/index.js";
+
 import AppError from "../utils/AppError.js";
+import { Prisma } from "../../../generated/prisma/client.js";
 
 type TErrorSource = {
 	path: string | number;
