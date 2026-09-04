@@ -2,6 +2,7 @@ import type { Server } from "node:http";
 import app from "./app.js";
 import config from "./app/config/index.js";
 import prisma from "./app/lib/prisma.js";
+import redisClient, { connectRedis } from "./app/lib/redis.js";
 
 let server: Server;
 
@@ -9,6 +10,9 @@ const main = async () => {
 	try {
 		await prisma.$connect();
 		console.log("✅ Database connected successfully");
+
+		await connectRedis();
+		console.log("✅ Redis connected successfully");
 
 		server = app.listen(config.port, () => {
 			console.log(`🚀 Server is running on port ${config.port}`);
@@ -27,11 +31,17 @@ const shutdown = async (signal: string) => {
 	if (server) {
 		server.close(async () => {
 			await prisma.$disconnect();
+			if (redisClient.isOpen) {
+				await redisClient.quit();
+			}
 			console.log("🛑 Server and database connections closed");
 			process.exit(0);
 		});
 	} else {
 		await prisma.$disconnect();
+		if (redisClient.isOpen) {
+			await redisClient.quit();
+		}
 		process.exit(0);
 	}
 };

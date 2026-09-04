@@ -1,0 +1,32 @@
+
+
+
+
+model Semester {
+  id String @id @default(uuid())
+
+  name String
+  year Int
+
+  startDate DateTime
+  endDate   DateTime
+
+  registrationStart DateTime
+  registrationEnd   DateTime
+
+  status SemesterStatus @default(UPCOMING)
+
+  sections Section[]
+  fees     Fee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([name, year])
+  @@index([status])
+  @@index([year])
+  @@index([deletedAt])
+  @@map("semesters")
+}
+

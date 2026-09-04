@@ -8,10 +8,14 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
+    "seed": "tsx prisma/seed.ts",
     "format:check": "npx @biomejs/biome format ./src",
     "format:fix": "npx @biomejs/biome format --write ./src",
     "lint:check": "npx @biomejs/biome lint ./src",
     "lint:fix": "npx @biomejs/biome lint --write ./src"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
@@ -24,6 +28,7 @@
     "dotenv": "^17.4.2",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0",
     "google-auth-library": "^11.0.0",
     "helmet": "^8.1.0",
     "http-status": "^2.1.0",
