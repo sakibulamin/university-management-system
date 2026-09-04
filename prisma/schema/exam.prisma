@@ -1,0 +1,20 @@
+
+model Exam {
+	id         String   @id @default(uuid())
+	sectionId  String
+	title      String
+	type       ExamType
+	totalMarks Int
+	examDate   DateTime
+
+	isDeleted Boolean   @default(false)
+	deletedAt DateTime?
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	section Section  @relation(fields: [sectionId], references: [id])
+	results Result[]
+
+	@@index([sectionId])
+}

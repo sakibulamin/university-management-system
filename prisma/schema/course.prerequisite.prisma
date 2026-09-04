@@ -1,0 +1,13 @@
+
+model CoursePrerequisite {
+	id                   String @id @default(uuid())
+	courseId             String
+	prerequisiteCourseId String
+
+	createdAt DateTime @default(now())
+
+	course             Course @relation("CourseRequiresPrerequisite", fields: [courseId], references: [id])
+	prerequisiteCourse Course @relation("PrerequisiteRequiredByCourse", fields: [prerequisiteCourseId], references: [id])
+
+	@@unique([courseId, prerequisiteCourseId])
+}

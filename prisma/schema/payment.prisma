@@ -1,0 +1,31 @@
+
+model Payment {
+	id      String         @id @default(uuid())
+	studentId String
+	amount    Float
+	currency  String         @default("BDT")
+	status    PaymentStatus  @default(PENDING)
+	gateway   PaymentGateway @default(BKASH)
+
+	merchantInvoiceNumber String  @unique
+	bkashPaymentID        String? @unique
+	bkashTrxID            String? @unique
+	payerReference        String?
+	customerMsisdn        String?
+
+	createResponse  Json?
+	executeResponse Json?
+	failureReason   String?
+
+	initiatedAt DateTime  @default(now())
+	paidAt      DateTime?
+	cancelledAt DateTime?
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	student Student @relation(fields: [studentId], references: [id])
+
+	@@index([studentId])
+	@@index([status])
+}

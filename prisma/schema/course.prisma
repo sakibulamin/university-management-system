@@ -1,0 +1,25 @@
+
+model Course {
+	id           String  @id @default(uuid())
+	name         String
+	code         String  @unique
+	credits      Int
+	description  String?
+	departmentId String?
+
+	isDeleted Boolean   @default(false)
+	deletedAt DateTime?
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	department Department? @relation(fields: [departmentId], references: [id])
+	sections   Section[]
+
+	// Prerequisites this course requires
+	prerequisites CoursePrerequisite[] @relation("CourseRequiresPrerequisite")
+	// Courses that require this course as a prerequisite
+	requiredFor   CoursePrerequisite[] @relation("PrerequisiteRequiredByCourse")
+
+	@@index([departmentId])
+}

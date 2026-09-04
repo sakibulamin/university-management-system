@@ -1,0 +1,18 @@
+
+model Program {
+	id           String @id @default(uuid())
+	name         String
+	code         String @unique
+	departmentId String
+
+	isDeleted Boolean   @default(false)
+	deletedAt DateTime?
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	department Department @relation(fields: [departmentId], references: [id])
+	students   Student[]
+
+	@@index([departmentId])
+}

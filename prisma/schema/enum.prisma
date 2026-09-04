@@ -1,0 +1,65 @@
+
+enum Role {
+	STUDENT
+	INSTRUCTOR
+	ADMIN
+}
+
+enum AuthProvider {
+	CREDENTIAL
+	GOOGLE
+}
+
+enum UserStatus {
+	ACTIVE
+	BLOCKED
+	DELETED
+}
+
+enum SemesterStatus {
+	UPCOMING
+	ACTIVE
+	COMPLETED
+}
+
+enum EnrollmentStatus {
+	ACTIVE
+	CANCELLED
+	COMPLETED
+}
+
+enum AttendanceStatus {
+	PRESENT
+	ABSENT
+	LATE
+}
+
+enum ExamType {
+	QUIZ
+	MIDTERM
+	FINAL
+}
+
+enum Grade {
+		A_PLUS
+	A
+	A_MINUS
+	B_PLUS
+	B
+	B_MINUS
+	C_PLUS
+	C
+	D
+	F
+}
+
+enum PaymentStatus {
+	PENDING
+	PAID
+	FAILED
+	CANCELLED
+}
+
+enum PaymentGateway {
+	BKASH
+}
