@@ -1,54 +1,48 @@
 import { Router } from "express";
-import checkAuth from "../../middleware/checkAuth.js";
-import { rateLimiter } from "../../middleware/rateLimiter.js";
 import validateRequest from "../../middleware/validateRequest.js";
 import { AuthController } from "./auth.controller.js";
 import { AuthValidation } from "./auth.validation.js";
+import { auth } from "../../middleware/checkAuth.js";
+import { Role } from "../../../../generated/prisma/enums.js";
 
 const router = Router();
 
 router.post(
 	"/register",
-	rateLimiter.authRateLimiter,
 	validateRequest(AuthValidation.RegisterZodSchema),
-	AuthController.register,
+	AuthController.registerStudent,
 );
 
 router.post(
 	"/verify-email",
-	rateLimiter.authRateLimiter,
 	validateRequest(AuthValidation.VerifyEmailZodSchema),
-	AuthController.verifyEmail,
+	AuthController.verifiedEmail,
 );
 
 router.post(
 	"/login",
-	rateLimiter.authRateLimiter,
 	validateRequest(AuthValidation.LoginZodSchema),
-	AuthController.login,
+	AuthController.loginUser,
 );
 
 router.post(
 	"/google-login",
-	rateLimiter.authRateLimiter,
 	validateRequest(AuthValidation.GoogleLoginZodSchema),
 	AuthController.googleLogin,
 );
 
-router.get("/me", checkAuth(), AuthController.getMe);
+router.get("/me", auth(Role.ADMIN,Role.STUDENT,Role.INSTRUCTOR), AuthController.getMe);
 
 router.post("/refresh-token", AuthController.refreshToken);
 
 router.post(
 	"/forgot-password",
-	rateLimiter.authRateLimiter,
 	validateRequest(AuthValidation.ForgotPasswordZodSchema),
 	AuthController.forgotPassword,
 );
 
 router.post(
 	"/reset-password",
-	rateLimiter.authRateLimiter,
 	validateRequest(AuthValidation.ResetPasswordZodSchema),
 	AuthController.resetPassword,
 );
