@@ -6,7 +6,9 @@ import type { ISectionFilters } from "./section.interface.js";
 import { SectionService } from "./section.service.js";
 
 const createSection = catchAsync(async (req: Request, res: Response) => {
-	const result = await SectionService.createSection(req.body, req.user);
+			const user= req.user;
+	const payload=req.body
+	const result = await SectionService.createSection(payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -17,8 +19,9 @@ const createSection = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllSections = catchAsync(async (req: Request, res: Response) => {
+	const query=req.query
 	const result = await SectionService.getAllSections(
-		req.query as unknown as ISectionFilters,
+		query as unknown as ISectionFilters,
 	);
 
 	sendResponse(res, {
@@ -31,7 +34,10 @@ const getAllSections = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleSection = catchAsync(async (req: Request, res: Response) => {
-	const result = await SectionService.getSingleSection(req.params.id);
+		
+	const params=req.params.id as string;
+
+	const result = await SectionService.getSingleSection(params);
 
 	sendResponse(res, {
 		success: true,
@@ -42,7 +48,10 @@ const getSingleSection = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateSection = catchAsync(async (req: Request, res: Response) => {
-	const result = await SectionService.updateSection(req.params.id, req.body, req.user);
+			const user= req.user;
+	const params=req.params.id as string;
+	const payload=req.body
+	const result = await SectionService.updateSection(params,payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -53,11 +62,10 @@ const updateSection = catchAsync(async (req: Request, res: Response) => {
 });
 
 const assignInstructor = catchAsync(async (req: Request, res: Response) => {
-	const result = await SectionService.assignInstructor(
-		req.params.id,
-		req.body,
-		req.user,
-	);
+			const user= req.user;
+	const params=req.params.id as string;
+	const payload=req.body
+	const result = await SectionService.assignInstructor(params,payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -68,7 +76,10 @@ const assignInstructor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteSection = catchAsync(async (req: Request, res: Response) => {
-	const result = await SectionService.deleteSection(req.params.id, req.user);
+			const user= req.user;
+	const params=req.params.id as string;
+
+	const result = await SectionService.deleteSection(params,user);
 
 	sendResponse(res, {
 		success: true,

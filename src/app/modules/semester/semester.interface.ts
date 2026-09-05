@@ -1,4 +1,5 @@
-import type { SemesterStatus } from "../../../generated/prisma/index.js";
+import { SemesterStatus } from "../../../../generated/prisma/enums";
+
 
 export interface ICreateSemesterPayload {
 	name: string;

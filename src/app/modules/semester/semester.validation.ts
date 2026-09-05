@@ -1,6 +1,5 @@
 import z from "zod";
 
-// Exact enum values from Phase 3 schema.prisma — nothing invented.
 const SEMESTER_STATUS_VALUES = ["UPCOMING", "ACTIVE", "COMPLETED"] as const;
 
 const CreateSemesterZodSchema = z

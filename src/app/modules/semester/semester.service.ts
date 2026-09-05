@@ -1,9 +1,7 @@
 import httpStatus from "http-status";
-import { Prisma, SemesterStatus } from "../../../generated/prisma/index.js";
 import type { TAuthUser } from "../../interfaces/index.js";
 import prisma from "../../lib/prisma.js";
 import AppError from "../../utils/AppError.js";
-import { createAuditLog } from "../../utils/auditLog.js";
 import { paginationHelper } from "../../utils/paginationHelper.js";
 import type {
 	ICreateSemesterPayload,
@@ -11,10 +9,11 @@ import type {
 	IUpdateSemesterPayload,
 	IUpdateSemesterStatusPayload,
 } from "./semester.interface.js";
+import { SemesterStatus } from "../../../../generated/prisma/enums.js";
+import { Prisma } from "../../../../generated/prisma/client.js";
 
 const ALLOWED_SORT_FIELDS = ["name", "startDate", "endDate", "createdAt"];
 
-// Only forward transitions are allowed; COMPLETED is terminal.
 const VALID_TRANSITIONS: Record<SemesterStatus, SemesterStatus[]> = {
 	[SemesterStatus.UPCOMING]: [SemesterStatus.ACTIVE],
 	[SemesterStatus.ACTIVE]: [SemesterStatus.COMPLETED],
@@ -38,13 +37,7 @@ const createSemester = async (payload: ICreateSemesterPayload, actor?: TAuthUser
 		},
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "SEMESTER_CREATED",
-		entity: "Semester",
-		entityId: result.id,
-		details: { name: result.name },
-	});
+
 
 	return result;
 };
@@ -121,13 +114,6 @@ const updateSemester = async (
 		data: payload,
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "SEMESTER_UPDATED",
-		entity: "Semester",
-		entityId: id,
-		details: { ...payload },
-	});
 
 	return result;
 };
@@ -170,13 +156,7 @@ const updateSemesterStatus = async (
 		data: { status: payload.status },
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "SEMESTER_STATUS_CHANGED",
-		entity: "Semester",
-		entityId: id,
-		details: { from: semester.status, to: payload.status },
-	});
+
 
 	return result;
 };

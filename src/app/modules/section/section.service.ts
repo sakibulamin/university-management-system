@@ -1,9 +1,8 @@
 import httpStatus from "http-status";
-import { EnrollmentStatus, Prisma, UserStatus } from "../../../generated/prisma/index.js";
+
 import type { TAuthUser } from "../../interfaces/index.js";
 import prisma from "../../lib/prisma.js";
 import AppError from "../../utils/AppError.js";
-import { createAuditLog } from "../../utils/auditLog.js";
 import { paginationHelper } from "../../utils/paginationHelper.js";
 import type {
 	IAssignInstructorPayload,
@@ -11,6 +10,8 @@ import type {
 	ISectionFilters,
 	IUpdateSectionPayload,
 } from "./section.interface.js";
+import { EnrollmentStatus, UserStatus } from "../../../../generated/prisma/enums.js";
+import { Prisma } from "../../../../generated/prisma/client.js";
 
 const ALLOWED_SORT_FIELDS = ["sectionCode", "capacity", "createdAt"];
 
@@ -92,18 +93,7 @@ const createSection = async (payload: ICreateSectionPayload, actor?: TAuthUser) 
 		include: SECTION_INCLUDE,
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "SECTION_CREATED",
-		entity: "Section",
-		entityId: result.id,
-		details: {
-			courseId: result.courseId,
-			semesterId: result.semesterId,
-			instructorId: result.instructorId,
-			sectionCode: result.sectionCode,
-		},
-	});
+
 
 	return result;
 };
@@ -217,13 +207,6 @@ const updateSection = async (
 		include: SECTION_INCLUDE,
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "SECTION_UPDATED",
-		entity: "Section",
-		entityId: id,
-		details: { ...payload },
-	});
 
 	return result;
 };
@@ -256,13 +239,7 @@ const assignInstructor = async (
 		include: SECTION_INCLUDE,
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "INSTRUCTOR_ASSIGNED",
-		entity: "Section",
-		entityId: id,
-		details: { from: existing.instructorId, to: payload.instructorId },
-	});
+
 
 	return result;
 };
@@ -293,12 +270,6 @@ const deleteSection = async (id: string, actor?: TAuthUser) => {
 		data: { isDeleted: true, deletedAt: new Date() },
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "SECTION_DELETED",
-		entity: "Section",
-		entityId: id,
-	});
 
 	return result;
 };
