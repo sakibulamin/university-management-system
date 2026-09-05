@@ -14,8 +14,6 @@ export interface IUpdateCoursePayload {
 	departmentId?: string;
 }
 
-// NOTE: no programId — Course has no relation to Program in the schema
-// (see Phase 5 gap analysis). Only departmentId is a valid filter.
 export interface ICourseFilters {
 	search?: string;
 	departmentId?: string;

@@ -1,15 +1,15 @@
 import httpStatus from "http-status";
-import { Prisma } from "../../../generated/prisma/index.js";
+
 import type { TAuthUser } from "../../interfaces/index.js";
 import prisma from "../../lib/prisma.js";
 import AppError from "../../utils/AppError.js";
-import { createAuditLog } from "../../utils/auditLog.js";
 import { paginationHelper } from "../../utils/paginationHelper.js";
 import type {
 	ICourseFilters,
 	ICreateCoursePayload,
 	IUpdateCoursePayload,
 } from "./course.interface.js";
+import { Prisma } from "../../../../generated/prisma/client.js";
 
 const ALLOWED_SORT_FIELDS = ["name", "code", "credits", "createdAt"];
 
@@ -39,14 +39,7 @@ const createCourse = async (payload: ICreateCoursePayload, actor?: TAuthUser) =>
 		include: { department: { select: DEPARTMENT_SELECT } },
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "COURSE_CREATED",
-		entity: "Course",
-		entityId: result.id,
-		details: { name: result.name, code: result.code, credits: result.credits },
-	});
-
+	
 	return result;
 };
 
@@ -142,13 +135,6 @@ const updateCourse = async (
 		include: { department: { select: DEPARTMENT_SELECT } },
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "COURSE_UPDATED",
-		entity: "Course",
-		entityId: id,
-		details: { ...payload },
-	});
 
 	return result;
 };
@@ -178,12 +164,7 @@ const deleteCourse = async (id: string, actor?: TAuthUser) => {
 		data: { isDeleted: true, deletedAt: new Date() },
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "COURSE_DELETED",
-		entity: "Course",
-		entityId: id,
-	});
+
 
 	return result;
 };
