@@ -7,7 +7,9 @@ import type { IInstructorFilters } from "./instructor.interface.js";
 import { InstructorService } from "./instructor.service.js";
 
 const createInstructor = catchAsync(async (req: Request, res: Response) => {
-	const result = await InstructorService.createInstructor(req.body, req.user);
+	const user = req.user;
+	const payload = req.body
+	const result = await InstructorService.createInstructor(payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -18,8 +20,9 @@ const createInstructor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllInstructors = catchAsync(async (req: Request, res: Response) => {
+	const query=req.query
 	const result = await InstructorService.getAllInstructors(
-		req.query as unknown as IInstructorFilters,
+		query as unknown as IInstructorFilters,
 	);
 
 	sendResponse(res, {
@@ -32,11 +35,13 @@ const getAllInstructors = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyInstructorProfile = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
+	const user = req.user?.id;
+
+	if (!user) {
 		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
 	}
 
-	const result = await InstructorService.getMyInstructorProfile(req.user.id);
+	const result = await InstructorService.getMyInstructorProfile(user);
 
 	sendResponse(res, {
 		success: true,
@@ -47,7 +52,10 @@ const getMyInstructorProfile = catchAsync(async (req: Request, res: Response) =>
 });
 
 const getSingleInstructor = catchAsync(async (req: Request, res: Response) => {
-	const result = await InstructorService.getSingleInstructor(req.params.id);
+
+	const params = req.params.id as string;
+
+	const result = await InstructorService.getSingleInstructor(params);
 
 	sendResponse(res, {
 		success: true,
@@ -58,7 +66,10 @@ const getSingleInstructor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateInstructor = catchAsync(async (req: Request, res: Response) => {
-	const result = await InstructorService.updateInstructor(req.params.id, req.body, req.user);
+	const user = req.user;
+	const params = req.params.id as string;
+	const payload = req.body
+	const result = await InstructorService.updateInstructor(params,payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -69,7 +80,10 @@ const updateInstructor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteInstructor = catchAsync(async (req: Request, res: Response) => {
-	const result = await InstructorService.deleteInstructor(req.params.id, req.user);
+	const user = req.user;
+	const params = req.params.id as string;
+
+	const result = await InstructorService.deleteInstructor(params,user);
 
 	sendResponse(res, {
 		success: true,

@@ -1,16 +1,17 @@
 import crypto from "node:crypto";
 import httpStatus from "http-status";
-import { Prisma, Role } from "../../../generated/prisma/index.js";
+
 import type { TAuthUser } from "../../interfaces/index.js";
 import prisma from "../../lib/prisma.js";
 import AppError from "../../utils/AppError.js";
-import { createAuditLog } from "../../utils/auditLog.js";
 import { paginationHelper } from "../../utils/paginationHelper.js";
 import type {
 	ICreateInstructorPayload,
 	IInstructorFilters,
 	IUpdateInstructorPayload,
 } from "./instructor.interface.js";
+import { Role } from "../../../../generated/prisma/enums.js";
+import { Prisma } from "../../../../generated/prisma/client.js";
 
 const ALLOWED_SORT_FIELDS = ["instructorId", "createdAt"];
 
@@ -21,7 +22,6 @@ const INSTRUCTOR_INCLUDE = {
 	department: { select: DEPARTMENT_SELECT },
 };
 
-// Auto-generated, e.g. INS-2026-4821 — never accepted from the client.
 const generateInstructorId = async () => {
 	const year = new Date().getFullYear();
 	let instructorId = "";
@@ -83,14 +83,6 @@ const createInstructor = async (payload: ICreateInstructorPayload, actor?: TAuth
 			profileImage: payload.profileImage,
 		},
 		include: INSTRUCTOR_INCLUDE,
-	});
-
-	await createAuditLog({
-		userId: actor?.id,
-		action: "CREATE_INSTRUCTOR",
-		entity: "Instructor",
-		entityId: result.id,
-		details: { instructorId: result.instructorId, departmentId: result.departmentId },
 	});
 
 	return result;
@@ -192,13 +184,7 @@ const updateInstructor = async (
 		include: INSTRUCTOR_INCLUDE,
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "UPDATE_INSTRUCTOR",
-		entity: "Instructor",
-		entityId: id,
-		details: { ...payload },
-	});
+	
 
 	return result;
 };
@@ -228,12 +214,6 @@ const deleteInstructor = async (id: string, actor?: TAuthUser) => {
 		data: { isDeleted: true, deletedAt: new Date() },
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "DELETE_INSTRUCTOR",
-		entity: "Instructor",
-		entityId: id,
-	});
 
 	return result;
 };
