@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { Prisma } from "../../../generated/prisma/index.js";
+
 import type { TAuthUser } from "../../interfaces/index.js";
 import prisma from "../../lib/prisma.js";
 import AppError from "../../utils/AppError.js";
@@ -10,6 +10,8 @@ import type {
 	IDepartmentFilters,
 	IUpdateDepartmentPayload,
 } from "./department.interface.js";
+import { Prisma } from "../../../../generated/prisma/client.js";
+
 
 const ALLOWED_SORT_FIELDS = ["name", "code", "createdAt"];
 
@@ -29,13 +31,7 @@ const createDepartment = async (payload: ICreateDepartmentPayload, actor?: TAuth
 		data: payload,
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "DEPARTMENT_CREATED",
-		entity: "Department",
-		entityId: result.id,
-		details: { name: result.name, code: result.code },
-	});
+	
 
 	return result;
 };
@@ -112,13 +108,7 @@ const updateDepartment = async (
 		data: payload,
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "DEPARTMENT_UPDATED",
-		entity: "Department",
-		entityId: id,
-		details: { ...payload },
-	});
+
 
 	return result;
 };
@@ -150,12 +140,7 @@ const deleteDepartment = async (id: string, actor?: TAuthUser) => {
 		data: { isDeleted: true, deletedAt: new Date() },
 	});
 
-	await createAuditLog({
-		userId: actor?.id,
-		action: "DEPARTMENT_DELETED",
-		entity: "Department",
-		entityId: id,
-	});
+	
 
 	return result;
 };

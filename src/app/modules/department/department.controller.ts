@@ -6,7 +6,9 @@ import { DepartmentService } from "./department.service.js";
 import type { IDepartmentFilters } from "./department.interface.js";
 
 const createDepartment = catchAsync(async (req: Request, res: Response) => {
-	const result = await DepartmentService.createDepartment(req.body, req.user);
+	const user = req.user;
+	const payload = req.body
+	const result = await DepartmentService.createDepartment(payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -31,7 +33,10 @@ const getAllDepartments = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleDepartment = catchAsync(async (req: Request, res: Response) => {
-	const result = await DepartmentService.getSingleDepartment(req.params.id);
+
+	const params = req.params.id as string;
+
+	const result = await DepartmentService.getSingleDepartment(params);
 
 	sendResponse(res, {
 		success: true,
@@ -42,11 +47,10 @@ const getSingleDepartment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateDepartment = catchAsync(async (req: Request, res: Response) => {
-	const result = await DepartmentService.updateDepartment(
-		req.params.id,
-		req.body,
-		req.user,
-	);
+	const user = req.user;
+	const params = req.params.id as string;
+	const payload = req.body
+	const result = await DepartmentService.updateDepartment(params, payload, user);
 
 	sendResponse(res, {
 		success: true,
@@ -57,7 +61,10 @@ const updateDepartment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteDepartment = catchAsync(async (req: Request, res: Response) => {
-	const result = await DepartmentService.deleteDepartment(req.params.id, req.user);
+	const user = req.user;
+	const params = req.params.id as string;
+
+	const result = await DepartmentService.deleteDepartment(params, user);
 
 	sendResponse(res, {
 		success: true,
