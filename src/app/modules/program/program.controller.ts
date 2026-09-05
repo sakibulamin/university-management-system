@@ -6,7 +6,9 @@ import type { IProgramFilters } from "./program.interface.js";
 import { ProgramService } from "./program.service.js";
 
 const createProgram = catchAsync(async (req: Request, res: Response) => {
-	const result = await ProgramService.createProgram(req.body, req.user);
+			const user= req.user;
+	const payload=req.body
+	const result = await ProgramService.createProgram(payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -17,8 +19,9 @@ const createProgram = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllPrograms = catchAsync(async (req: Request, res: Response) => {
+	const query=req.query
 	const result = await ProgramService.getAllPrograms(
-		req.query as unknown as IProgramFilters,
+		query as unknown as IProgramFilters,
 	);
 
 	sendResponse(res, {
@@ -31,7 +34,10 @@ const getAllPrograms = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleProgram = catchAsync(async (req: Request, res: Response) => {
-	const result = await ProgramService.getSingleProgram(req.params.id);
+		
+	const params=req.params.id as string;
+	
+	const result = await ProgramService.getSingleProgram(params);
 
 	sendResponse(res, {
 		success: true,
@@ -42,7 +48,10 @@ const getSingleProgram = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateProgram = catchAsync(async (req: Request, res: Response) => {
-	const result = await ProgramService.updateProgram(req.params.id, req.body, req.user);
+			const user= req.user;
+	const params=req.params.id as string;
+	const payload=req.body
+	const result = await ProgramService.updateProgram(params,payload,user);
 
 	sendResponse(res, {
 		success: true,
@@ -53,7 +62,10 @@ const updateProgram = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteProgram = catchAsync(async (req: Request, res: Response) => {
-	const result = await ProgramService.deleteProgram(req.params.id, req.user);
+			const user= req.user;
+	const params=req.params.id as string;
+	
+	const result = await ProgramService.deleteProgram(params,user);
 
 	sendResponse(res, {
 		success: true,
