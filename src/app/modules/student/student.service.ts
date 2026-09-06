@@ -1,9 +1,8 @@
 import httpStatus from "http-status";
-import { EnrollmentStatus, Prisma } from "../../../generated/prisma/index.js";
+
 import type { TAuthUser } from "../../interfaces/index.js";
 import prisma from "../../lib/prisma.js";
 import AppError from "../../utils/AppError.js";
-import { createAuditLog } from "../../utils/auditLog.js";
 import { paginationHelper } from "../../utils/paginationHelper.js";
 import type {
 	IAdminUpdateStudentPayload,
@@ -11,9 +10,18 @@ import type {
 	IUpdateMyStudentProfilePayload,
 } from "./student.interface.js";
 
+import { createAuditLog } from "../../utils/auditLog.js";
+import { Prisma } from "../../../../generated/prisma/client.js";
+
 const ALLOWED_SORT_FIELDS = ["studentId", "createdAt"];
 
-const USER_SELECT = { id: true, name: true, email: true, role: true, status: true };
+const USER_SELECT = {
+	id: true,
+	name: true,
+	email: true,
+	role: true,
+	status: true,
+};
 const PROGRAM_SELECT = { id: true, name: true, code: true };
 const PROGRAM_WITH_DEPARTMENT_SELECT = {
 	id: true,
@@ -30,7 +38,9 @@ const STUDENT_INCLUDE = {
 const getAllStudents = async (filters: IStudentFilters) => {
 	const { page, limit, skip, sortBy, sortOrder } =
 		paginationHelper.calculatePagination(filters);
-	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy)
+		? sortBy
+		: "createdAt";
 
 	const andConditions: Prisma.StudentWhereInput[] = [{ isDeleted: false }];
 
@@ -49,7 +59,9 @@ const getAllStudents = async (filters: IStudentFilters) => {
 	}
 
 	const where: Prisma.StudentWhereInput = { AND: andConditions };
-	const orderBy = { [safeSortBy]: sortOrder } as Prisma.StudentOrderByWithRelationInput;
+	const orderBy = {
+		[safeSortBy]: sortOrder,
+	} as Prisma.StudentOrderByWithRelationInput;
 
 	const [data, total] = await Promise.all([
 		prisma.student.findMany({
@@ -154,7 +166,10 @@ const adminUpdateStudent = async (
 		});
 
 		if (!isProgramExists) {
-			throw new AppError(httpStatus.BAD_REQUEST, "Selected program does not exist");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Selected program does not exist",
+			);
 		}
 	}
 
@@ -184,27 +199,9 @@ const deleteStudent = async (id: string, actor?: TAuthUser) => {
 		throw new AppError(httpStatus.NOT_FOUND, "Student not found");
 	}
 
-	const activeEnrollmentCount = await prisma.enrollment.count({
-		where: { studentId: id, status: EnrollmentStatus.ACTIVE },
-	});
-
-	if (activeEnrollmentCount > 0) {
-		throw new AppError(
-			httpStatus.BAD_REQUEST,
-			"Cannot delete a student with active enrollments",
-		);
-	}
-
 	const result = await prisma.student.update({
 		where: { id },
 		data: { isDeleted: true, deletedAt: new Date() },
-	});
-
-	await createAuditLog({
-		userId: actor?.id,
-		action: "DELETE_STUDENT",
-		entity: "Student",
-		entityId: id,
 	});
 
 	return result;

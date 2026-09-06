@@ -7,8 +7,9 @@ import type { IStudentFilters } from "./student.interface.js";
 import { StudentService } from "./student.service.js";
 
 const getAllStudents = catchAsync(async (req: Request, res: Response) => {
+	const query = req.query;
 	const result = await StudentService.getAllStudents(
-		req.query as unknown as IStudentFilters,
+		query as unknown as IStudentFilters,
 	);
 
 	sendResponse(res, {
@@ -21,11 +22,12 @@ const getAllStudents = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyStudentProfile = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
+	const user = req.user?.id;
+	if (!user) {
 		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
 	}
 
-	const result = await StudentService.getMyStudentProfile(req.user.id);
+	const result = await StudentService.getMyStudentProfile(user);
 
 	sendResponse(res, {
 		success: true,
@@ -36,7 +38,9 @@ const getMyStudentProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleStudent = catchAsync(async (req: Request, res: Response) => {
-	const result = await StudentService.getSingleStudent(req.params.id);
+	const params = req.params.id as string;
+
+	const result = await StudentService.getSingleStudent(params);
 
 	sendResponse(res, {
 		success: true,
@@ -46,27 +50,35 @@ const getSingleStudent = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-const updateMyStudentProfile = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
-		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
-	}
+const updateMyStudentProfile = catchAsync(
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		const params = req.params.id as string;
+		const payload = req.body;
+		if (!user) {
+			throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
+		}
 
-	const result = await StudentService.updateMyStudentProfile(
-		req.user.id,
-		req.body,
-		req.user,
-	);
+		const result = await StudentService.updateMyStudentProfile(
+			params,
+			payload,
+			user,
+		);
 
-	sendResponse(res, {
-		success: true,
-		statusCode: httpStatus.OK,
-		message: "Profile updated successfully",
-		data: result,
-	});
-});
+		sendResponse(res, {
+			success: true,
+			statusCode: httpStatus.OK,
+			message: "Profile updated successfully",
+			data: result,
+		});
+	},
+);
 
 const adminUpdateStudent = catchAsync(async (req: Request, res: Response) => {
-	const result = await StudentService.adminUpdateStudent(req.params.id, req.body, req.user);
+	const user = req.user;
+	const params = req.params.id as string;
+	const payload = req.body;
+	const result = await StudentService.adminUpdateStudent(params, payload, user);
 
 	sendResponse(res, {
 		success: true,
@@ -77,7 +89,10 @@ const adminUpdateStudent = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteStudent = catchAsync(async (req: Request, res: Response) => {
-	const result = await StudentService.deleteStudent(req.params.id, req.user);
+	const user = req.user;
+	const params = req.params.id as string;
+
+	const result = await StudentService.deleteStudent(params, user);
 
 	sendResponse(res, {
 		success: true,
