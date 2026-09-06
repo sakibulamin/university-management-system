@@ -12,10 +12,17 @@ import type {
 } from "./instructor.interface.js";
 import { Role } from "../../../../generated/prisma/enums.js";
 import { Prisma } from "../../../../generated/prisma/client.js";
+import { createAuditLog } from "../../utils/auditLog.js";
 
 const ALLOWED_SORT_FIELDS = ["instructorId", "createdAt"];
 
-const USER_SELECT = { id: true, name: true, email: true, role: true, status: true };
+const USER_SELECT = {
+	id: true,
+	name: true,
+	email: true,
+	role: true,
+	status: true,
+};
 const DEPARTMENT_SELECT = { id: true, name: true, code: true };
 const INSTRUCTOR_INCLUDE = {
 	user: { select: USER_SELECT },
@@ -31,14 +38,19 @@ const generateInstructorId = async () => {
 		const randomPart = crypto.randomInt(1000, 9999);
 		instructorId = `INS-${year}-${randomPart}`;
 
-		const existing = await prisma.instructor.findUnique({ where: { instructorId } });
+		const existing = await prisma.instructor.findUnique({
+			where: { instructorId },
+		});
 		isUnique = !existing;
 	}
 
 	return instructorId;
 };
 
-const createInstructor = async (payload: ICreateInstructorPayload, actor?: TAuthUser) => {
+const createInstructor = async (
+	payload: ICreateInstructorPayload,
+	actor?: TAuthUser,
+) => {
 	const user = await prisma.user.findUnique({ where: { id: payload.userId } });
 
 	if (!user || user.isDeleted) {
@@ -68,7 +80,10 @@ const createInstructor = async (payload: ICreateInstructorPayload, actor?: TAuth
 	});
 
 	if (!isDepartmentExists) {
-		throw new AppError(httpStatus.BAD_REQUEST, "Selected department does not exist");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Selected department does not exist",
+		);
 	}
 
 	const instructorId = await generateInstructorId();
@@ -84,14 +99,25 @@ const createInstructor = async (payload: ICreateInstructorPayload, actor?: TAuth
 		},
 		include: INSTRUCTOR_INCLUDE,
 	});
-
+	await createAuditLog({
+		userId: actor?.id,
+		action: "CREATE_INSTRUCTOR",
+		entity: "Instructor",
+		entityId: result.id,
+		details: {
+			instructorId: result.instructorId,
+			departmentId: result.departmentId,
+		},
+	});
 	return result;
 };
 
 const getAllInstructors = async (filters: IInstructorFilters) => {
 	const { page, limit, skip, sortBy, sortOrder } =
 		paginationHelper.calculatePagination(filters);
-	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy)
+		? sortBy
+		: "createdAt";
 
 	const andConditions: Prisma.InstructorWhereInput[] = [{ isDeleted: false }];
 
@@ -110,7 +136,9 @@ const getAllInstructors = async (filters: IInstructorFilters) => {
 	}
 
 	const where: Prisma.InstructorWhereInput = { AND: andConditions };
-	const orderBy = { [safeSortBy]: sortOrder } as Prisma.InstructorOrderByWithRelationInput;
+	const orderBy = {
+		[safeSortBy]: sortOrder,
+	} as Prisma.InstructorOrderByWithRelationInput;
 
 	const [data, total] = await Promise.all([
 		prisma.instructor.findMany({
@@ -174,7 +202,10 @@ const updateInstructor = async (
 		});
 
 		if (!isDepartmentExists) {
-			throw new AppError(httpStatus.BAD_REQUEST, "Selected department does not exist");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Selected department does not exist",
+			);
 		}
 	}
 
@@ -184,7 +215,13 @@ const updateInstructor = async (
 		include: INSTRUCTOR_INCLUDE,
 	});
 
-	
+	await createAuditLog({
+		userId: actor?.id,
+		action: "UPDATE_INSTRUCTOR",
+		entity: "Instructor",
+		entityId: id,
+		details: { ...payload },
+	});
 
 	return result;
 };
@@ -214,7 +251,12 @@ const deleteInstructor = async (id: string, actor?: TAuthUser) => {
 		data: { isDeleted: true, deletedAt: new Date() },
 	});
 
-
+	await createAuditLog({
+		userId: actor?.id,
+		action: "DELETE_INSTRUCTOR",
+		entity: "Instructor",
+		entityId: id,
+	});
 	return result;
 };
 

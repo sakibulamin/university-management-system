@@ -6,7 +6,6 @@ import { InstructorValidation } from "./instructor.validation.js";
 import { auth } from "../../middleware/checkAuth.js";
 import { Role } from "../../../../generated/prisma/enums.js";
 
-
 const router = Router();
 
 router.post(
@@ -16,10 +15,17 @@ router.post(
 	InstructorController.createInstructor,
 );
 
-router.get("/", auth(Role.ADMIN, Role.INSTRUCTOR,Role.STUDENT), InstructorController.getAllInstructors);
+router.get(
+	"/",
+	auth(Role.ADMIN, Role.INSTRUCTOR, Role.STUDENT),
+	InstructorController.getAllInstructors,
+);
 
-
-router.get("/me", auth(Role.INSTRUCTOR), InstructorController.getMyInstructorProfile);
+router.get(
+	"/me",
+	auth(Role.INSTRUCTOR),
+	InstructorController.getMyInstructorProfile,
+);
 
 router.get("/:id", auth(), InstructorController.getSingleInstructor);
 
