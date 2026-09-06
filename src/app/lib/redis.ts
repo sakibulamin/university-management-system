@@ -1,18 +1,15 @@
 import { createClient } from "redis";
-import config from "../config/index.js";
+import config from "../config";
 
-const redisClient = createClient({
-	url: config.redis_url,
+export const redisClient = createClient({
+	username: config.redis_user,
+	password: config.redis_password,
+	socket: {
+		host: config.redis_host,
+		port: Number(config.redis_port),
+	},
 });
 
-redisClient.on("error", (error) => {
-	console.error("❌ Redis Client Error:", error);
+redisClient.on("error", (err) => {
+	console.error("Redis Client Error:", err);
 });
-
-export const connectRedis = async () => {
-	if (!redisClient.isOpen) {
-		await redisClient.connect();
-	}
-};
-
-export default redisClient;
