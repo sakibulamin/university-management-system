@@ -10,8 +10,6 @@ const router = Router();
 
 router.get("/", auth(Role.ADMIN), StudentController.getAllStudents);
 
-// IMPORTANT: /me must be registered before /:id or Express will treat
-// "me" as an :id param.
 router.get("/me", auth(Role.STUDENT), StudentController.getMyStudentProfile);
 
 router.patch(
