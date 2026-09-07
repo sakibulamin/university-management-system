@@ -6,9 +6,9 @@ import type { IProgramFilters } from "./program.interface.js";
 import { ProgramService } from "./program.service.js";
 
 const createProgram = catchAsync(async (req: Request, res: Response) => {
-			const user= req.user;
-	const payload=req.body
-	const result = await ProgramService.createProgram(payload,user);
+	const user = req.user;
+	const payload = req.body;
+	const result = await ProgramService.createProgram(payload, user);
 
 	sendResponse(res, {
 		success: true,
@@ -19,7 +19,7 @@ const createProgram = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllPrograms = catchAsync(async (req: Request, res: Response) => {
-	const query=req.query
+	const query = req.query;
 	const result = await ProgramService.getAllPrograms(
 		query as unknown as IProgramFilters,
 	);
@@ -34,9 +34,8 @@ const getAllPrograms = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleProgram = catchAsync(async (req: Request, res: Response) => {
-		
-	const params=req.params.id as string;
-	
+	const params = req.params.id as string;
+
 	const result = await ProgramService.getSingleProgram(params);
 
 	sendResponse(res, {
@@ -48,10 +47,10 @@ const getSingleProgram = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateProgram = catchAsync(async (req: Request, res: Response) => {
-			const user= req.user;
-	const params=req.params.id as string;
-	const payload=req.body
-	const result = await ProgramService.updateProgram(params,payload,user);
+	const user = req.user;
+	const params = req.params.id as string;
+	const payload = req.body;
+	const result = await ProgramService.updateProgram(params, payload, user);
 
 	sendResponse(res, {
 		success: true,
@@ -62,10 +61,10 @@ const updateProgram = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteProgram = catchAsync(async (req: Request, res: Response) => {
-			const user= req.user;
-	const params=req.params.id as string;
-	
-	const result = await ProgramService.deleteProgram(params,user);
+	const user = req.user;
+	const params = req.params.id as string;
+
+	const result = await ProgramService.deleteProgram(params, user);
 
 	sendResponse(res, {
 		success: true,

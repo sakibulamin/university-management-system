@@ -11,7 +11,7 @@ import type {
 	IUpdateInstructorPayload,
 } from "./instructor.interface.js";
 import { Role } from "../../../../generated/prisma/enums.js";
-import { Prisma } from "../../../../generated/prisma/client.js";
+import type { Prisma } from "../../../../generated/prisma/client.js";
 import { createAuditLog } from "../../utils/auditLog.js";
 
 const ALLOWED_SORT_FIELDS = ["instructorId", "createdAt"];

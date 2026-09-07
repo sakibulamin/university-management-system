@@ -7,8 +7,8 @@ import type { IDepartmentFilters } from "./department.interface.js";
 
 const createDepartment = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
-	const payload = req.body
-	const result = await DepartmentService.createDepartment(payload,user);
+	const payload = req.body;
+	const result = await DepartmentService.createDepartment(payload, user);
 
 	sendResponse(res, {
 		success: true,
@@ -33,7 +33,6 @@ const getAllDepartments = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleDepartment = catchAsync(async (req: Request, res: Response) => {
-
 	const params = req.params.id as string;
 
 	const result = await DepartmentService.getSingleDepartment(params);
@@ -49,8 +48,12 @@ const getSingleDepartment = catchAsync(async (req: Request, res: Response) => {
 const updateDepartment = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const params = req.params.id as string;
-	const payload = req.body
-	const result = await DepartmentService.updateDepartment(params, payload, user);
+	const payload = req.body;
+	const result = await DepartmentService.updateDepartment(
+		params,
+		payload,
+		user,
+	);
 
 	sendResponse(res, {
 		success: true,

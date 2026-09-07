@@ -5,3 +5,7 @@ dist/
 .DS_Store
 src/generated/
 generated/
+
+/generated/prisma
+
+.vercel

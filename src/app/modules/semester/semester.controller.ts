@@ -6,9 +6,9 @@ import type { ISemesterFilters } from "./semester.interface.js";
 import { SemesterService } from "./semester.service.js";
 
 const createSemester = catchAsync(async (req: Request, res: Response) => {
-			const user= req.user;
-	const payload=req.body
-	const result = await SemesterService.createSemester(payload,user);
+	const user = req.user;
+	const payload = req.body;
+	const result = await SemesterService.createSemester(payload, user);
 
 	sendResponse(res, {
 		success: true,
@@ -33,8 +33,7 @@ const getAllSemesters = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleSemester = catchAsync(async (req: Request, res: Response) => {
-	
-	const params=req.params.id as string;
+	const params = req.params.id as string;
 
 	const result = await SemesterService.getSingleSemester(params);
 
@@ -46,25 +45,16 @@ const getSingleSemester = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-const updateSemester = catchAsync(async (req: Request, res: Response) => {
-			const user= req.user;
-	const params=req.params.id as string;
-	const payload=req.body
-	const result = await SemesterService.updateSemester(params,payload,user);
-
-	sendResponse(res, {
-		success: true,
-		statusCode: httpStatus.OK,
-		message: "Semester updated successfully",
-		data: result,
-	});
-});
 
 const updateSemesterStatus = catchAsync(async (req: Request, res: Response) => {
-			const user= req.user;
-	const params=req.params.id as string;
-	const payload=req.body
-	const result = await SemesterService.updateSemesterStatus(params,payload,user);
+	const user = req.user;
+	const params = req.params.id as string;
+	const payload = req.body;
+	const result = await SemesterService.updateSemester(
+		params,
+		payload,
+		user,
+	);
 
 	sendResponse(res, {
 		success: true,
@@ -78,6 +68,5 @@ export const SemesterController = {
 	createSemester,
 	getAllSemesters,
 	getSingleSemester,
-	updateSemester,
 	updateSemesterStatus,
 };

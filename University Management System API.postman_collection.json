@@ -1,0 +1,1705 @@
+{
+  "info": {
+    "_postman_id": "0216adb1-0d19-4a1e-8daa-502d6ff66f59",
+    "name": "University Management System API",
+    "description": "Full API collection for the University Management System backend. Set the 'baseUrl' variable, then log in via Auth > Login (or Verify Email) to auto-capture the accessToken used by every other request's Bearer auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54743963",
+    "_collection_link": "https://go.postman.co/collection/54743963-0216adb1-0d19-4a1e-8daa-502d6ff66f59?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Student/Instructors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sakibul Amin\",\n  \"email\": \"info.sakibulamin@gmail.com\",\n  \"password\": \"Sakib@123\",\n  \"role\":\"STUDENT\"\n \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://university-management-system-weld.vercel.app/api/v1/auth/register",
+              "protocol": "https",
+              "host": [
+                "university-management-system-weld",
+                "vercel",
+                "app"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public. Sends OTP to email; account not created until verified."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code < 300) {\n    const json = pm.response.json();\n    if (json.data && json.data.accessToken) {\n        pm.collectionVariables.set(\"accessToken\", json.data.accessToken);\n    }\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"meet.sakibulamin@gmail.com\",\n  \"otp\": \"164665\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Public. Creates the User + Student, returns tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code < 300) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.accessToken) {",
+                  "        pm.collectionVariables.set(\"accessToken\", json.data.accessToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@university.com\",\n  \"password\": \"Admin@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Public. Returns accessToken, sets refreshToken cookie."
+          },
+          "response": []
+        },
+        {
+          "name": "Google Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code < 300) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.accessToken) {",
+                  "        pm.collectionVariables.set(\"accessToken\", json.data.accessToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"<google-id-token>\",\n  \"programId\": \"<programId, only needed for a brand-new user>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/google-login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google-login"
+              ]
+            },
+            "description": "Public."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile (/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Requires Bearer token, any role."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code < 300) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.accessToken) {",
+                  "        pm.collectionVariables.set(\"accessToken\", json.data.accessToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "description": "Reads refreshToken cookie. Postman must retain cookies across requests."
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"info.sakibulamin@gmail.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Public."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n   \"email\": \"info.sakibulamin@gmail.com\",\n  \"otp\": \"734016\",\n  \"newPassword\": \"Sakib@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Public."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Revokes current refresh token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Departments",
+      "item": [
+        {
+          "name": "Create Department",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Computer Science and Engineering\",\n  \"code\": \"CSE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/departments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Departments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/departments?page=1&limit=10&search=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Department",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/departments/c4b64fd5-4894-40cb-946c-370c9ad86930",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments",
+                "c4b64fd5-4894-40cb-946c-370c9ad86930"
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Department",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Computer Science & Engineering\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/departments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Department",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/departments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Blocked if dependent programs/courses/instructors exist."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Programs",
+      "item": [
+        {
+          "name": "Create Program",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"B.Sc. in CSE\",\n  \"code\": \"BSCSE\",\n  \"departmentId\": \"096a8493-4b51-47bd-9155-9fa2a83713af\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/programs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "programs"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Programs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/programs?page=1&limit=10&search=&departmentId=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "programs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "departmentId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Program",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/programs/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "programs",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Program",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"B.Sc. in Computer Science & Engineering-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/programs/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "programs",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Program",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/programs/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "programs",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Blocked if active students reference it."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electric Full Algorithm Structures\",\n  \"code\": \"EEE301\",\n  \"credits\": 3,\n  \"description\": \"Electric Algorithm structures.\",\n  \"departmentId\": \"096a8493-4b51-47bd-9155-9fa2a83713af\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses?page=1&limit=10&search=&departmentId=&sortBy=createdAt&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "departmentId",
+                  "value": ""
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "Any authenticated user. NOTE: departmentId filter only — no programId (Course has no Program relation)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Course",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/8b565327-f0a9-4c6c-ae4c-77327aa9ed0a",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "8b565327-f0a9-4c6c-ae4c-77327aa9ed0a"
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\":\"Electric Engineering\",\n  \"credits\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/8b565327-f0a9-4c6c-ae4c-77327aa9ed0a",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "8b565327-f0a9-4c6c-ae4c-77327aa9ed0a"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Blocked if dependent sections/prerequisites exist."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Semesters",
+      "item": [
+        {
+          "name": "Create Semester",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Semester 26\",\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2027-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/semesters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "semesters"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Semesters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/semesters?page=1&limit=10&status=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "semesters"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Semester",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/semesters/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "semesters",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Semester Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n \"name\":\"Semester for CSE 26\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/semesters/c536d863-5dd4-4f76-bd15-ef663c680cde",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "semesters",
+                "c536d863-5dd4-4f76-bd15-ef663c680cde"
+              ]
+            },
+            "description": "ADMIN only. Valid transitions: UPCOMING->ACTIVE->COMPLETED only. Only one ACTIVE semester allowed at a time."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Instructors",
+      "item": [
+        {
+          "name": "Create Instructor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"868e4882-bc96-4956-8593-812550b821d6\",\n  \"departmentId\": \"27279dc8-5fc5-471d-b21e-a1c71476ccd3\",\n  \"designation\": \"Assistant Professor for Electrical\",\n  \"phone\": \"+880160234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/instructors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instructors"
+              ]
+            },
+            "description": "ADMIN only. instructorId is auto-generated."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Instructors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instructors?page=1&limit=10&search=&departmentId=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instructors"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "departmentId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Instructor Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instructors/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instructors",
+                "me"
+              ]
+            },
+            "description": "INSTRUCTOR only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Instructor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instructors/15e1e36b-92bc-44cc-ae9e-c3d281935c01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instructors",
+                "15e1e36b-92bc-44cc-ae9e-c3d281935c01"
+              ]
+            },
+            "description": "Any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Instructor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departmentId\": \"096a8493-4b51-47bd-9155-9fa2a83713af\",\n  \"designation\": \"Assistant Professor for CSE\",\n  \"phone\": \"+880171234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/instructors/cc2bc74a-1adb-4b89-8789-0a529806907e",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instructors",
+                "cc2bc74a-1adb-4b89-8789-0a529806907e"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Instructor",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/instructors/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "instructors",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Blocked if active section assignments exist."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Students",
+      "item": [
+        {
+          "name": "Get All Students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students?page=1&limit=10&search=&programId=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "programId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Student Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "me"
+              ]
+            },
+            "description": "STUDENT only."
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Student Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+8801XXXXXXXXX\",\n  \"address\": \"Dhaka, Bangladesh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/students/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "me"
+              ]
+            },
+            "description": "STUDENT only. Cannot change role/password/email/studentId/programId/status."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Student",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Update Student",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programId\": \"<programId>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/students/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Student",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Blocked if active enrollments exist."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Initiate Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000,\n  \"purpose\": \"Semester Fee\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/initiate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "initiate"
+              ]
+            },
+            "description": "STUDENT only. Returns bkashURL to redirect the user to."
+          },
+          "response": []
+        },
+        {
+          "name": "Payment Success Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentID\": \"TR001171c89If1788654319991\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/success",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "success"
+              ]
+            },
+            "description": "STUDENT only, own payment. Idempotent — safe to call more than once."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/7a941333-e334-4de3-aad6-e2114c7d928c",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "7a941333-e334-4de3-aad6-e2114c7d928c"
+              ]
+            },
+            "description": "STUDENT own only, or ADMIN any."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&limit=10&search=&role=&status=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "role",
+                  "value": ""
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"INSTRUCTOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:id/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                ":id",
+                "role"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Cannot change own role."
+          },
+          "response": []
+        },
+        {
+          "name": "Block User",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:id/block",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                ":id",
+                "block"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Cannot block self. Revokes live refresh tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Unblock User",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:id/unblock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                ":id",
+                "unblock"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User (soft)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            },
+            "description": "ADMIN only. Cannot delete self."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/dashboard-stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "dashboard-stats"
+              ]
+            },
+            "description": "ADMIN only. 30s Redis cache."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/audit-logs?page=1&limit=10&userId=&entity=&action=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "userId",
+                  "value": ""
+                },
+                {
+                  "key": "entity",
+                  "value": ""
+                },
+                {
+                  "key": "action",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "user",
+      "item": [
+        {
+          "name": "profile-image-upload",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "https://university-management-system-weld.vercel.app/api/v1/user/profile-image?profile-image=",
+              "protocol": "https",
+              "host": [
+                "university-management-system-weld",
+                "vercel",
+                "app"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "profile-image"
+              ],
+              "query": [
+                {
+                  "key": "profile-image",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://university-management-system-weld.vercel.app/api/v1/user/my-profile",
+              "protocol": "https",
+              "host": [
+                "university-management-system-weld",
+                "vercel",
+                "app"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "my-profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update-profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sakibul amin\"\n \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://university-management-system-weld.vercel.app/api/v1/user/update-profile",
+              "protocol": "https",
+              "host": [
+                "university-management-system-weld",
+                "vercel",
+                "app"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "update-profile"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://university-management-system-weld.vercel.app/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ]
+}

@@ -3,7 +3,7 @@ model Instructor {
 	id           String  @id @default(uuid())
 	userId       String  @unique
 	instructorId String  @unique
-	departmentId String
+	departmentId String?
 	designation  String?
 	phone        String?
 	profileImage String?
@@ -15,8 +15,8 @@ model Instructor {
 	updatedAt DateTime @updatedAt
 
 	user       User       @relation(fields: [userId], references: [id])
-	department Department @relation(fields: [departmentId], references: [id])
-	sections   Section[]
+	department Department? @relation(fields: [departmentId], references: [id])
+
 
 	@@index([departmentId])
 }

@@ -31,7 +31,7 @@ const getAllCourses = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleCourse = catchAsync(async (req: Request, res: Response) => {
-	const params=req.params.id as string;
+	const params = req.params.id as string;
 	const result = await CourseService.getSingleCourse(params);
 
 	sendResponse(res, {
@@ -45,9 +45,9 @@ const getSingleCourse = catchAsync(async (req: Request, res: Response) => {
 const updateCourse = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const params = req.params.id as string;
-	const payload = req.body
+	const payload = req.body;
 
-	const result = await CourseService.updateCourse(params,payload, user);
+	const result = await CourseService.updateCourse(params, payload, user);
 
 	sendResponse(res, {
 		success: true,

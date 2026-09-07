@@ -9,19 +9,26 @@ import type {
 	IProgramFilters,
 	IUpdateProgramPayload,
 } from "./program.interface.js";
-import { Prisma } from "../../../../generated/prisma/client.js";
+import type { Prisma } from "../../../../generated/prisma/client.js";
+import { createAuditLog } from "../../utils/auditLog.js";
 
 const ALLOWED_SORT_FIELDS = ["name", "code", "createdAt"];
 
 const DEPARTMENT_SELECT = { id: true, name: true, code: true };
 
-const createProgram = async (payload: ICreateProgramPayload, actor?: TAuthUser) => {
+const createProgram = async (
+	payload: ICreateProgramPayload,
+	actor?: TAuthUser,
+) => {
 	const isDepartmentExists = await prisma.department.findFirst({
 		where: { id: payload.departmentId, isDeleted: false },
 	});
 
 	if (!isDepartmentExists) {
-		throw new AppError(httpStatus.BAD_REQUEST, "Selected department does not exist");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Selected department does not exist",
+		);
 	}
 
 	const isProgramExists = await prisma.program.findFirst({
@@ -29,14 +36,27 @@ const createProgram = async (payload: ICreateProgramPayload, actor?: TAuthUser) 
 	});
 
 	if (isProgramExists) {
-		throw new AppError(httpStatus.BAD_REQUEST, "Program with this code already exists");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Program with this code already exists",
+		);
 	}
 
 	const result = await prisma.program.create({
 		data: payload,
 		include: { department: { select: DEPARTMENT_SELECT } },
 	});
-
+	await createAuditLog({
+		userId: actor?.id,
+		action: "PROGRAM_CREATED",
+		entity: "Program",
+		entityId: result.id,
+		details: {
+			name: result.name,
+			code: result.code,
+			departmentId: result.departmentId,
+		},
+	});
 
 	return result;
 };
@@ -44,7 +64,9 @@ const createProgram = async (payload: ICreateProgramPayload, actor?: TAuthUser) 
 const getAllPrograms = async (filters: IProgramFilters) => {
 	const { page, limit, skip, sortBy, sortOrder } =
 		paginationHelper.calculatePagination(filters);
-	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy)
+		? sortBy
+		: "createdAt";
 
 	const andConditions: Prisma.ProgramWhereInput[] = [{ isDeleted: false }];
 
@@ -62,7 +84,9 @@ const getAllPrograms = async (filters: IProgramFilters) => {
 	}
 
 	const where: Prisma.ProgramWhereInput = { AND: andConditions };
-	const orderBy = { [safeSortBy]: sortOrder } as Prisma.ProgramOrderByWithRelationInput;
+	const orderBy = {
+		[safeSortBy]: sortOrder,
+	} as Prisma.ProgramOrderByWithRelationInput;
 
 	const [data, total] = await Promise.all([
 		prisma.program.findMany({
@@ -113,7 +137,10 @@ const updateProgram = async (
 		});
 
 		if (!isDepartmentExists) {
-			throw new AppError(httpStatus.BAD_REQUEST, "Selected department does not exist");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Selected department does not exist",
+			);
 		}
 	}
 
@@ -133,7 +160,13 @@ const updateProgram = async (
 		include: { department: { select: DEPARTMENT_SELECT } },
 	});
 
-
+	await createAuditLog({
+		userId: actor?.id,
+		action: "PROGRAM_UPDATED",
+		entity: "Program",
+		entityId: id,
+		details: { ...payload },
+	});
 	return result;
 };
 
@@ -162,7 +195,12 @@ const deleteProgram = async (id: string, actor?: TAuthUser) => {
 		data: { isDeleted: true, deletedAt: new Date() },
 	});
 
-
+	await createAuditLog({
+		userId: actor?.id,
+		action: "PROGRAM_DELETED",
+		entity: "Program",
+		entityId: id,
+	});
 
 	return result;
 };

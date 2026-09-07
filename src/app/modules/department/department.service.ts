@@ -10,12 +10,14 @@ import type {
 	IDepartmentFilters,
 	IUpdateDepartmentPayload,
 } from "./department.interface.js";
-import { Prisma } from "../../../../generated/prisma/client.js";
-
+import type { Prisma } from "../../../../generated/prisma/client.js";
 
 const ALLOWED_SORT_FIELDS = ["name", "code", "createdAt"];
 
-const createDepartment = async (payload: ICreateDepartmentPayload, actor?: TAuthUser) => {
+const createDepartment = async (
+	payload: ICreateDepartmentPayload,
+	actor?: TAuthUser,
+) => {
 	const isDepartmentExists = await prisma.department.findFirst({
 		where: { code: payload.code, isDeleted: false },
 	});
@@ -31,7 +33,13 @@ const createDepartment = async (payload: ICreateDepartmentPayload, actor?: TAuth
 		data: payload,
 	});
 
-	
+	await createAuditLog({
+		userId: actor?.id,
+		action: "DEPARTMENT_CREATED",
+		entity: "Department",
+		entityId: result.id,
+		details: { name: result.name, code: result.code },
+	});
 
 	return result;
 };
@@ -39,7 +47,9 @@ const createDepartment = async (payload: ICreateDepartmentPayload, actor?: TAuth
 const getAllDepartments = async (filters: IDepartmentFilters) => {
 	const { page, limit, skip, sortBy, sortOrder } =
 		paginationHelper.calculatePagination(filters);
-	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy)
+		? sortBy
+		: "createdAt";
 
 	const andConditions: Prisma.DepartmentWhereInput[] = [{ isDeleted: false }];
 
@@ -99,7 +109,10 @@ const updateDepartment = async (
 		});
 
 		if (isCodeTaken) {
-			throw new AppError(httpStatus.BAD_REQUEST, "Department code already in use");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Department code already in use",
+			);
 		}
 	}
 
@@ -108,7 +121,13 @@ const updateDepartment = async (
 		data: payload,
 	});
 
-
+	await createAuditLog({
+		userId: actor?.id,
+		action: "DEPARTMENT_UPDATED",
+		entity: "Department",
+		entityId: id,
+		details: { ...payload },
+	});
 
 	return result;
 };
@@ -139,8 +158,12 @@ const deleteDepartment = async (id: string, actor?: TAuthUser) => {
 		where: { id },
 		data: { isDeleted: true, deletedAt: new Date() },
 	});
-
-	
+	await createAuditLog({
+		userId: actor?.id,
+		action: "DEPARTMENT_DELETED",
+		entity: "Department",
+		entityId: id,
+	});
 
 	return result;
 };

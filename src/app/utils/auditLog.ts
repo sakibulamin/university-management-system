@@ -15,7 +15,7 @@ export const createAuditLog = async (payload: TCreateAuditLogPayload) => {
 			action: payload.action,
 			entity: payload.entity,
 			entityId: payload.entityId,
-			details: payload.details ?? undefined,
+			details: JSON.stringify(payload.details),
 		},
 	});
 };

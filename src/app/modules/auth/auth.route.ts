@@ -31,7 +31,11 @@ router.post(
 	AuthController.googleLogin,
 );
 
-router.get("/me", auth(Role.ADMIN,Role.STUDENT,Role.INSTRUCTOR), AuthController.getMe);
+router.get(
+	"/me",
+	auth(Role.ADMIN, Role.STUDENT, Role.INSTRUCTOR),
+	AuthController.getMe,
+);
 
 router.post("/refresh-token", AuthController.refreshToken);
 

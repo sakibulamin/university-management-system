@@ -8,7 +8,8 @@ import { Role } from "../../../../generated/prisma/enums.js";
 
 const router = Router();
 
-router.post("/",
+router.post(
+	"/",
 	auth(Role.ADMIN),
 	validateRequest(CourseValidation.CreateCourseZodSchema),
 	CourseController.createCourse,
@@ -20,7 +21,7 @@ router.get("/:id", auth(), CourseController.getSingleCourse);
 
 router.patch(
 	"/:id",
-	auth(Role.ADMIN,Role.STUDENT),
+	auth(Role.ADMIN, Role.STUDENT),
 	validateRequest(CourseValidation.UpdateCourseZodSchema),
 	CourseController.updateCourse,
 );

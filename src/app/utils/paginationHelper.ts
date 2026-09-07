@@ -13,7 +13,9 @@ type TPaginationResult = {
 	sortOrder: "asc" | "desc";
 };
 
-const calculatePagination = (options: TPaginationOptions): TPaginationResult => {
+const calculatePagination = (
+	options: TPaginationOptions,
+): TPaginationResult => {
 	const page = Number(options.page) > 0 ? Number(options.page) : 1;
 	const limit = Number(options.limit) > 0 ? Number(options.limit) : 10;
 	const skip = (page - 1) * limit;

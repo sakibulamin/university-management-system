@@ -6,11 +6,11 @@ import AppError from "../../utils/AppError.js";
 import { createAuditLog } from "../../utils/auditLog.js";
 import { paginationHelper } from "../../utils/paginationHelper.js";
 import {
-	Prisma,
-	Role,
+	type Prisma,
+	type Role,
 	UserStatus,
 } from "../../../../generated/prisma/client.js";
-import {
+import type {
 	IAuditLogFilters,
 	IUpdateUserRolePayload,
 	IUserFilters,

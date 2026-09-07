@@ -14,11 +14,8 @@ model Course {
 	updatedAt DateTime @updatedAt
 
 	department Department? @relation(fields: [departmentId], references: [id])
-	sections   Section[]
 
-	// Prerequisites this course requires
 	prerequisites CoursePrerequisite[] @relation("CourseRequiresPrerequisite")
-	// Courses that require this course as a prerequisite
 	requiredFor   CoursePrerequisite[] @relation("PrerequisiteRequiredByCourse")
 
 	@@index([departmentId])

@@ -11,7 +11,7 @@ import type {
 } from "./student.interface.js";
 
 import { createAuditLog } from "../../utils/auditLog.js";
-import { Prisma } from "../../../../generated/prisma/client.js";
+import type { Prisma } from "../../../../generated/prisma/client.js";
 
 const ALLOWED_SORT_FIELDS = ["studentId", "createdAt"];
 

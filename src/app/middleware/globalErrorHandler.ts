@@ -20,7 +20,9 @@ const globalErrorHandler = (
 ) => {
 	let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
 	let message = "Something went wrong";
-	let errorSources: TErrorSource[] = [{ path: "", message: "Something went wrong" }];
+	let errorSources: TErrorSource[] = [
+		{ path: "", message: "Something went wrong" },
+	];
 
 	if (error instanceof ZodError) {
 		statusCode = httpStatus.BAD_REQUEST;
@@ -44,10 +46,9 @@ const globalErrorHandler = (
 			message = "Requested record not found";
 			errorSources = [{ path: "", message: "Record not found" }];
 		} else if (error.code === "P2034") {
-			// Serializable transaction write conflict — e.g. two students
-			// racing for the last seat in a section. Safe to retry.
 			statusCode = httpStatus.CONFLICT;
-			message = "This request conflicted with another request. Please try again.";
+			message =
+				"This request conflicted with another request. Please try again.";
 			errorSources = [
 				{ path: "", message: "Transaction write conflict, please retry" },
 			];

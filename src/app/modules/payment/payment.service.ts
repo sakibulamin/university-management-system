@@ -18,7 +18,7 @@ import {
 	Role,
 } from "../../../../generated/prisma/enums.js";
 
-import { Prisma } from "../../../../generated/prisma/client.js";
+import type { Prisma } from "../../../../generated/prisma/client.js";
 import { createAuditLog } from "../../utils/auditLog.js";
 
 const generateMerchantInvoiceNumber = () => {

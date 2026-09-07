@@ -22,13 +22,6 @@ router.get("/:id", auth(), SemesterController.getSingleSemester);
 router.patch(
 	"/:id",
 	auth(Role.ADMIN),
-	validateRequest(SemesterValidation.UpdateSemesterZodSchema),
-	SemesterController.updateSemester,
-);
-
-router.patch(
-	"/:id/status",
-	auth(Role.ADMIN),
 	validateRequest(SemesterValidation.UpdateSemesterStatusZodSchema),
 	SemesterController.updateSemesterStatus,
 );

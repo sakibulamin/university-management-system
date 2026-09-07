@@ -1,26 +1,29 @@
 
 
 model User {
-	id            String       @id @default(uuid())
-	name          String
-	email         String       @unique
-	password      String?
-	role          Role
-	status        UserStatus   @default(ACTIVE)
-	authProvider  AuthProvider @default(CREDENTIAL)
-	googleId      String?      @unique
-	emailVerified Boolean      @default(false)
+  id            String       @id @default(uuid())
+  name          String
+  email         String       @unique
+  password      String?
+  role          Role?        @default(STUDENT)
+  status        UserStatus   @default(ACTIVE)
+  authProvider  AuthProvider @default(CREDENTIAL)
+  googleId      String?      @unique
+  emailVerified Boolean      @default(false)
 
-	isDeleted Boolean   @default(false)
-	deletedAt DateTime?
+  imageUrl      String?
+  imagePublicId String?
 
-	createdAt DateTime @default(now())
-	updatedAt DateTime @updatedAt
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
 
-	student       Student?
-	instructor    Instructor?
-	auditLogs     AuditLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-	@@index([role])
-	@@index([status])
+  student    Student?
+  instructor Instructor?
+  auditLogs  AuditLog[]
+
+  @@index([role])
+  @@index([status])
 }

@@ -1,5 +1,4 @@
-import { SemesterStatus } from "../../../../generated/prisma/enums";
-
+import type { SemesterStatus } from "../../../../generated/prisma/enums";
 
 export interface ICreateSemesterPayload {
 	name: string;
@@ -7,14 +6,14 @@ export interface ICreateSemesterPayload {
 	endDate: Date;
 }
 
-export interface IUpdateSemesterPayload {
+
+
+export interface IUpdateSemesterStatusPayload {
 	name?: string;
 	startDate?: Date;
 	endDate?: Date;
-}
-
-export interface IUpdateSemesterStatusPayload {
 	status: SemesterStatus;
+
 }
 
 export interface ISemesterFilters {

@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "description": "University Management System API",
   "type": "module",
-  "main": "dist/src/server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/src/server.js",
-    "seed": "tsx prisma/seed.ts",
-    "format:check": "npx @biomejs/biome format ./src",
-    "format:fix": "npx @biomejs/biome format --write ./src",
-    "lint:check": "npx @biomejs/biome lint ./src",
-    "lint:fix": "npx @biomejs/biome lint --write ./src"
+ "dev": "tsx watch src/server.ts",
+  "build": "tsup",
+  "start": "node dist/server.js",
+  "seed": "tsx prisma/seed.ts",
+  "format:check": "npx @biomejs/biome format ./src",
+  "format:fix": "npx @biomejs/biome format --write ./src",
+  "lint:check": "npx @biomejs/biome lint ./src",
+  "lint:fix": "npx @biomejs/biome lint --write ./src"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -39,6 +39,7 @@
     "nodemailer": "^9.0.5",
     "pg": "^8.22.0",
     "redis": "^6.2.1",
+    "tsup": "^8.5.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

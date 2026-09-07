@@ -1,4 +1,4 @@
-model AuditLog {
+ model AuditLog {
 	id       String  @id @default(uuid())
 	userId   String?
 	action   String

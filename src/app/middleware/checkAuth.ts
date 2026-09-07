@@ -5,21 +5,20 @@ import config from "../config";
 
 import { catchAsync } from "../utils/catchAsync";
 import { jwtUtils } from "../utils/jwt";
-import { Role } from "../../../generated/prisma/enums";
+import type { Role } from "../../../generated/prisma/enums";
 import prisma from "../lib/prisma";
 
-
 export interface RequestUser {
-	             id:string ;
-				email: string;
-				name: string;
-				userId: string;
-				role: Role;
-			};
+	id: string;
+	email: string;
+	name: string;
+	userId: string;
+	role: Role;
+}
 declare global {
 	namespace Express {
 		interface Request {
-			user?:RequestUser
+			user?: RequestUser;
 		}
 	}
 }
@@ -70,7 +69,7 @@ export const auth = (...requiredRoles: Role[]) => {
 		}
 
 		req.user = {
-			id:user.id,
+			id: user.id,
 			email,
 			name,
 			userId,

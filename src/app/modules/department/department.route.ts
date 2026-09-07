@@ -9,17 +9,27 @@ import { auth } from "../../middleware/checkAuth.js";
 
 const router = Router();
 
-router.post("/",
+router.post(
+	"/",
 	auth(Role.ADMIN),
 	validateRequest(DepartmentValidation.CreateDepartmentZodSchema),
 	DepartmentController.createDepartment,
 );
 
-router.get("/", auth(Role.ADMIN,Role.STUDENT,Role.INSTRUCTOR), DepartmentController.getAllDepartments);
+router.get(
+	"/",
+	auth(Role.ADMIN, Role.STUDENT, Role.INSTRUCTOR),
+	DepartmentController.getAllDepartments,
+);
 
-router.get("/:id", auth(Role.ADMIN,Role.STUDENT,Role.INSTRUCTOR), DepartmentController.getSingleDepartment);
+router.get(
+	"/:id",
+	auth(Role.ADMIN, Role.STUDENT, Role.INSTRUCTOR),
+	DepartmentController.getSingleDepartment,
+);
 
-router.patch("/:id",
+router.patch(
+	"/:id",
 	auth(Role.ADMIN),
 	validateRequest(DepartmentValidation.UpdateDepartmentZodSchema),
 	DepartmentController.updateDepartment,

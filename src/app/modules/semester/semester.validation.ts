@@ -13,21 +13,11 @@ const CreateSemesterZodSchema = z
 		path: ["endDate"],
 	});
 
-const UpdateSemesterZodSchema = z
-	.object({
-		name: z.string().min(2, "Name must be at least 2 characters").optional(),
-		startDate: z.coerce.date().optional(),
-		endDate: z.coerce.date().optional(),
-	})
-	.refine(
-		(data) => !data.startDate || !data.endDate || data.endDate > data.startDate,
-		{
-			message: "End date must be after start date",
-			path: ["endDate"],
-		},
-	);
 
 const UpdateSemesterStatusZodSchema = z.object({
+	name: z.string().min(2, "Name must be at least 2 characters").optional(),
+	startDate: z.coerce.date().optional(),
+	endDate: z.coerce.date().optional(),
 	status: z.enum(SEMESTER_STATUS_VALUES, {
 		message: `Status must be one of: ${SEMESTER_STATUS_VALUES.join(", ")}`,
 	}),
@@ -35,6 +25,5 @@ const UpdateSemesterStatusZodSchema = z.object({
 
 export const SemesterValidation = {
 	CreateSemesterZodSchema,
-	UpdateSemesterZodSchema,
 	UpdateSemesterStatusZodSchema,
 };

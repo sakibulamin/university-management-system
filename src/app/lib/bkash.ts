@@ -184,11 +184,7 @@ const createPayment = async (payload: {
 }): Promise<TBkashCreatePaymentResponse> => {
 	const headers = await getAuthHeaders();
 
-	console.log("bKash Base URL:", config.bkash_base_url);
-	console.log("bKash Create Payment Payload:", {
-		...payload,
-		amount: payload.amount.toFixed(2),
-	});
+	
 
 	const response = await fetch(
 		`${config.bkash_base_url}/tokenized/checkout/create`,
@@ -209,8 +205,7 @@ const createPayment = async (payload: {
 
 	const responseText = await response.text();
 
-	console.log("bKash Create Payment Status:", response.status);
-	console.log("bKash Create Payment Response:", responseText);
+
 
 	let result: TBkashCreatePaymentResponse;
 

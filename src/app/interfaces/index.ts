@@ -1,6 +1,5 @@
-import type { Role } from "../../generated/prisma/index.js";
+import type { Role } from "../../../generated/prisma/enums";
 
-// Matches the shape checkAuth.ts attaches to req.user
 export type TAuthUser = {
 	id: string;
 	email: string;

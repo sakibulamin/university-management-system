@@ -6,9 +6,7 @@ import {
 	UserStatus,
 } from "../../../../generated/prisma/enums";
 
-
 import prisma from "../../lib/prisma";
-
 
 import type {
 	IForgotPasswordPayload,
@@ -19,9 +17,7 @@ import type {
 	IVerifyEmailPayload,
 } from "./auth.interface";
 
-
 import crypto from "crypto";
-
 
 import path from "path";
 import ejs from "ejs";
@@ -29,17 +25,13 @@ import { jwtUtils } from "../../utils/jwt";
 import config from "../../config";
 import { transporter } from "../../lib/nodemailer";
 import { googleclient } from "../../lib/googleAuth";
-import { TokenPayload } from "google-auth-library";
+import type { TokenPayload } from "google-auth-library";
 import { redisClient } from "../../lib/redis";
 
-
-
-
 const registerStudent = async (payload: IRegisterPayload) => {
-	const { name, password } = payload;
+	const { name, password, role } = payload;
 
 	const email = payload.email.trim().toLowerCase();
-
 
 	const isUserExists = await prisma.user.findUnique({
 		where: { email },
@@ -48,30 +40,27 @@ const registerStudent = async (payload: IRegisterPayload) => {
 	if (isUserExists) {
 		throw new Error("User with this email already exists");
 	}
-
-
-	
-
-	
+	if (!role) {
+		throw new Error("Role is required");
+	}
 
 	const hashedPassword = await bcrypt.hash(
 		password,
 		Number(config.bcrypt_salt_rounds),
 	);
 
-
 	const otpKey = `student verification otp:${email}`;
 
-	const expiredSeconds = 5 * 60
+	const expiredSeconds = 5 * 60;
+
 	const otpValue = crypto.randomInt(100000, 1000000).toString();
 
 	await redisClient.set(otpKey, otpValue, {
 		expiration: {
 			type: "EX",
-			value: expiredSeconds
-		}
-	})
-
+			value: expiredSeconds,
+		},
+	});
 
 	const registrationKey = `student registration data:${email}`;
 
@@ -79,7 +68,7 @@ const registerStudent = async (payload: IRegisterPayload) => {
 		name,
 		email,
 		password: hashedPassword,
-		
+		role,
 	};
 
 	await redisClient.setEx(
@@ -87,7 +76,6 @@ const registerStudent = async (payload: IRegisterPayload) => {
 		expiredSeconds,
 		JSON.stringify(registrationPayload),
 	);
-
 
 	const templatePath = path.join(
 		process.cwd(),
@@ -101,31 +89,26 @@ const registerStudent = async (payload: IRegisterPayload) => {
 		expirationMinutes: expiredSeconds / 60,
 	};
 
-	const html = await ejs.renderFile(
-		templatePath,
-		templateData,
-	);
+	const html = await ejs.renderFile(templatePath, templateData);
 
 	await transporter.sendMail({
 		from: config.sender_email,
 		to: email,
 		subject: "Email Verification",
-		html
-	})
+		html,
+	});
 
 	return {
+		name,
 		email,
+		password,
+		role,
 	};
 };
 
-
-
-const verifyEmail = async (
-	payload: IVerifyEmailPayload,
-) => {
+const verifyEmail = async (payload: IVerifyEmailPayload) => {
 	const otp = payload.otp;
 	const email = payload.email.trim().toLowerCase();
-
 
 	const isUserExists = await prisma.user.findUnique({
 		where: { email },
@@ -139,16 +122,11 @@ const verifyEmail = async (
 		throw new Error("Email already verified");
 	}
 
-	if (
-		isUserExists?.isDeleted ||
-		isUserExists?.status === UserStatus.DELETED
-	) {
+	if (isUserExists?.isDeleted || isUserExists?.status === UserStatus.DELETED) {
 		throw new Error("User is deleted");
 	}
 
-
 	const expiredSeconds = 5 * 60;
-	
 
 	const otpKey = `student verification otp:${email}`;
 
@@ -161,52 +139,47 @@ const verifyEmail = async (
 	if (redisOtp !== otp) {
 		throw new Error("OTP does not match");
 	}
-	
-
 
 	await redisClient.del(otpKey);
-	
-	const otpValue = crypto
-		.randomInt(100000, 1000000)
-		.toString();
-
-
 
 	const registrationKey = `student registration data:${email}`;
 
-	const redisStudentData =
-		await redisClient.get(registrationKey);
+	const redisStudentData = await redisClient.get(registrationKey);
 
 	if (!redisStudentData) {
-		throw new Error(
-			"Registration data has expired. Please register again",
-		);
+		throw new Error("Registration data has expired. Please register again");
 	}
 
-	const studentPayload = JSON.parse(
-		redisStudentData,
-	) as IRegisterPayload;
+	const studentPayload = JSON.parse(redisStudentData) as IRegisterPayload;
 
+	const userData: any = {
+		name: studentPayload.name,
+		email: studentPayload.email,
+		password: studentPayload.password,
+		role: studentPayload.role,
+		status: UserStatus.ACTIVE,
+		authProvider: AuthProvider.CREDENTIAL,
+		emailVerified: true,
+	};
+
+	if (studentPayload.role === Role.STUDENT) {
+		userData.student = {
+			create: {
+				studentId: await generateStudentId(),
+			},
+		};
+	}
+
+	if (studentPayload.role === Role.INSTRUCTOR) {
+		userData.instructor = {
+			create: {
+				instructorId: await generateInstructorId(),
+			},
+		};
+	}
 
 	const createdUser = await prisma.user.create({
-		data: {
-			name: studentPayload.name,
-			email: studentPayload.email,
-			password: studentPayload.password,
-
-			role: Role.STUDENT,
-			status: UserStatus.ACTIVE,
-
-			authProvider: AuthProvider.CREDENTIAL,
-			emailVerified: true,
-
-			student: {
-				create: {
-					studentId: await generateStudentId(),
-					
-				},
-			},
-		},
+		data: userData,
 
 		omit: {
 			password: true,
@@ -214,12 +187,11 @@ const verifyEmail = async (
 
 		include: {
 			student: true,
+			instructor: true,
 		},
 	});
 
-
 	await redisClient.del(registrationKey);
-
 
 	const templatePath = path.join(
 		process.cwd(),
@@ -228,22 +200,18 @@ const verifyEmail = async (
 
 	const templateData = {
 		name: createdUser.name,
-	}
-	const html = await ejs.renderFile(
-		templatePath,
-		templateData,
-	);
+	};
 
+	const html = await ejs.renderFile(templatePath, templateData);
 
 	await transporter.sendMail({
 		from: config.sender_email,
 		to: email,
 		subject: "Welcome To University Management System",
-		html
-	})
+		html,
+	});
 
-	const { student, ...user } = createdUser;
-
+	const { student, instructor, ...user } = createdUser;
 
 	const jwtPayload = {
 		userId: user.id,
@@ -252,13 +220,11 @@ const verifyEmail = async (
 		role: user.role,
 	};
 
-
 	const accessToken = jwtUtils.createToken(
 		jwtPayload,
 		config.jwt_access_secret as string,
 		config.jwt_access_expires_in as SignOptions,
 	);
-
 
 	const refreshToken = jwtUtils.createToken(
 		jwtPayload,
@@ -268,12 +234,12 @@ const verifyEmail = async (
 
 	return {
 		user,
-		student,
+		student: student ?? null,
+		instructor: instructor ?? null,
 		accessToken,
 		refreshToken,
 	};
 };
-
 
 const generateStudentId = async () => {
 	const year = new Date().getFullYear();
@@ -286,12 +252,11 @@ const generateStudentId = async () => {
 
 		studentId = `STU-${year}-${randomPart}`;
 
-		const existingStudent =
-			await prisma.student.findUnique({
-				where: {
-					studentId,
-				},
-			});
+		const existingStudent = await prisma.student.findUnique({
+			where: {
+				studentId,
+			},
+		});
 
 		if (!existingStudent) {
 			isUnique = true;
@@ -301,7 +266,23 @@ const generateStudentId = async () => {
 	return studentId;
 };
 
+const generateInstructorId = async (): Promise<string> => {
+	const year = new Date().getFullYear();
 
+	while (true) {
+		const randomPart = Math.floor(100000 + Math.random() * 900000).toString();
+
+		const instructorId = `INS-${year}-${randomPart}`;
+
+		const existingInstructor = await prisma.instructor.findUnique({
+			where: { instructorId },
+		});
+
+		if (!existingInstructor) {
+			return instructorId;
+		}
+	}
+};
 
 const loginUser = async (payload: ILoginPayload) => {
 	const { password } = payload;
@@ -320,26 +301,15 @@ const loginUser = async (payload: ILoginPayload) => {
 		throw new Error("User is blocked");
 	}
 
-	if (
-		user.isDeleted ||
-		user.status === UserStatus.DELETED
-	) {
+	if (user.isDeleted || user.status === UserStatus.DELETED) {
 		throw new Error("User is deleted");
 	}
 
-	if (
-		user.authProvider !== AuthProvider.CREDENTIAL ||
-		!user.password
-	) {
-		throw new Error(
-			"This account uses Google login. Please login with Google",
-		);
+	if (user.authProvider !== AuthProvider.CREDENTIAL || !user.password) {
+		throw new Error("This account uses Google login. Please login with Google");
 	}
 
-	const isPasswordMatched = await bcrypt.compare(
-		password,
-		user.password,
-	);
+	const isPasswordMatched = await bcrypt.compare(password, user.password);
 
 	if (!isPasswordMatched) {
 		throw new Error("Invalid email or password");
@@ -373,7 +343,6 @@ const loginUser = async (payload: ILoginPayload) => {
 	};
 };
 
-
 const getMe = async (userId: string) => {
 	const user = await prisma.user.findUnique({
 		where: {
@@ -397,21 +366,17 @@ const getMe = async (userId: string) => {
 	return user;
 };
 
-
-
 const refreshToken = async (token: string) => {
-	const verifiedRefreshToken =
-		jwtUtils.verifyToken(
-			token,
-			config.jwt_refresh_secret,
-		);
+	const verifiedRefreshToken = jwtUtils.verifyToken(
+		token,
+		config.jwt_refresh_secret,
+	);
 
 	if (!verifiedRefreshToken.success) {
 		throw new Error("Invalid refresh token");
 	}
 
-	const data =
-		verifiedRefreshToken.data as JwtPayload;
+	const data = verifiedRefreshToken.data as JwtPayload;
 
 	const user = await prisma.user.findUnique({
 		where: {
@@ -419,14 +384,8 @@ const refreshToken = async (token: string) => {
 		},
 	});
 
-	if (
-		!user ||
-		user.isDeleted ||
-		user.status !== UserStatus.ACTIVE
-	) {
-		throw new Error(
-			"User is inactive or not found",
-		);
+	if (!user || user.isDeleted || user.status !== UserStatus.ACTIVE) {
+		throw new Error("User is inactive or not found");
 	}
 
 	const jwtPayload = {
@@ -454,8 +413,6 @@ const refreshToken = async (token: string) => {
 	};
 };
 
-
-
 const googleLogin = async (payload: IGoogleLoginPayload) => {
 	let googleIdTokenPayload: TokenPayload | null | undefined = null;
 	try {
@@ -466,7 +423,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 
 		googleIdTokenPayload = ticket.getPayload();
 	} catch (error) {
-		console.log("Google ID Token Verification Failed", error);
+	
 		throw new Error("Invalid Or Expired Google Id Token");
 	}
 
@@ -526,7 +483,6 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 				},
 			});
 		} else {
-			
 			user = await prisma.user.create({
 				data: {
 					name: googleIdTokenPayload.name,
@@ -544,61 +500,51 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 				},
 			});
 
+			const templatePath = path.join(
+				process.cwd(),
+				"src/app/templates/student-welcome-email.ejs",
+			);
 
-		const templatePath = path.join(
-			process.cwd(),
-			"src/app/templates/student-welcome-email.ejs",
-		);
-
-		const html = await ejs.renderFile(
-			templatePath,
-			{
+			const html = await ejs.renderFile(templatePath, {
 				name: user.name,
-			},
+			});
+
+			await transporter.sendMail({
+				from: config.sender_email,
+				to: user.email,
+				subject: "Welcome To University Management System",
+				html,
+			});
+		}
+
+		const jwtPayload = {
+			userId: user.id,
+			name: user.name,
+			email: user.email,
+			role: user.role,
+		};
+
+		const accessToken = jwtUtils.createToken(
+			jwtPayload,
+			config.jwt_access_secret,
+			config.jwt_access_expires_in as SignOptions,
 		);
 
-		await transporter.sendMail({
-			from:config.sender_email,
-			to: user.email,
-			subject:"Welcome To University Management System",
-			html,
-		});
+		const refreshToken = jwtUtils.createToken(
+			jwtPayload,
+			config.jwt_refresh_secret,
+			config.jwt_refresh_expires_in as SignOptions,
+		);
+
+		return {
+			accessToken,
+			refreshToken,
+		};
 	}
-
-	const jwtPayload = {
-		userId: user.id,
-		name: user.name,
-		email: user.email,
-		role: user.role,
-	};
-
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
-	);
-
-	const refreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
-	);
-
-	
-
-	return {
-		accessToken,
-		refreshToken,
-	};
 };
-}
 
-
-const forgotPassword = async (
-	payload: IForgotPasswordPayload,
-) => {
-	const email =
-		payload.email.trim().toLowerCase();
+const forgotPassword = async (payload: IForgotPasswordPayload) => {
+	const email = payload.email.trim().toLowerCase();
 
 	const user = await prisma.user.findUnique({
 		where: {
@@ -607,9 +553,7 @@ const forgotPassword = async (
 	});
 
 	if (!user) {
-		throw new Error(
-			"User does not exist",
-		);
+		throw new Error("User does not exist");
 	}
 
 	if (user.status === UserStatus.BLOCKED) {
@@ -617,57 +561,38 @@ const forgotPassword = async (
 	}
 
 	if (!user.emailVerified) {
-		throw new Error(
-			"User email is not verified",
-		);
+		throw new Error("User email is not verified");
 	}
 
-	if (
-		user.isDeleted ||
-		user.status === UserStatus.DELETED
-	) {
+	if (user.isDeleted || user.status === UserStatus.DELETED) {
 		throw new Error("User is deleted");
 	}
 
-	if (
-		user.googleId &&
-		user.authProvider === AuthProvider.GOOGLE
-	) {
-		throw new Error(
-			"This account uses Google login",
-		);
+	if (user.googleId && user.authProvider === AuthProvider.GOOGLE) {
+		throw new Error("This account uses Google login");
 	}
 
-	const otp =
-		crypto.randomInt(100000, 1000000).toString();
+	const otp = crypto.randomInt(100000, 1000000).toString();
 
 	const expiredSeconds = 5 * 60;
 
 	const key = `forgot password email:${email}`;
 
-	await redisClient.setEx(
-		key,
-		expiredSeconds,
-		otp,
-	);
+	await redisClient.setEx(key, expiredSeconds, otp);
 
 	const templatePath = path.join(
 		process.cwd(),
 		"src/app/templates/forgot-password.ejs",
 	);
 
-	const html = await ejs.renderFile(
-		templatePath,
-		{
-			name: user.name,
-			otp,
-			expirationMinutes:
-				expiredSeconds / 60,
-		},
-	);
+	const html = await ejs.renderFile(templatePath, {
+		name: user.name,
+		otp,
+		expirationMinutes: expiredSeconds / 60,
+	});
 
 	await transporter.sendMail({
-		from:config.sender_email,
+		from: config.sender_email,
 		to: user.email,
 		subject: "Reset Your Password",
 		html,
@@ -678,19 +603,10 @@ const forgotPassword = async (
 	};
 };
 
+const resetPassword = async (payload: IResetPasswordPayload) => {
+	const { email: rawEmail, newPassword, otp } = payload;
 
-
-const resetPassword = async (
-	payload: IResetPasswordPayload,
-) => {
-	const {
-		email: rawEmail,
-		newPassword,
-		otp,
-	} = payload;
-
-	const email =
-		rawEmail.trim().toLowerCase();
+	const email = rawEmail.trim().toLowerCase();
 
 	const user = await prisma.user.findUnique({
 		where: {
@@ -699,9 +615,7 @@ const resetPassword = async (
 	});
 
 	if (!user) {
-		throw new Error(
-			"User does not exist",
-		);
+		throw new Error("User does not exist");
 	}
 
 	if (user.status === UserStatus.BLOCKED) {
@@ -709,50 +623,33 @@ const resetPassword = async (
 	}
 
 	if (!user.emailVerified) {
-		throw new Error(
-			"User email is not verified",
-		);
+		throw new Error("User email is not verified");
 	}
 
-	if (
-		user.isDeleted ||
-		user.status === UserStatus.DELETED
-	) {
+	if (user.isDeleted || user.status === UserStatus.DELETED) {
 		throw new Error("User is deleted");
 	}
 
-	if (
-		user.googleId &&
-		user.authProvider === AuthProvider.GOOGLE
-	) {
-		throw new Error(
-			"This account uses Google login",
-		);
+	if (user.googleId && user.authProvider === AuthProvider.GOOGLE) {
+		throw new Error("This account uses Google login");
 	}
 
-	const key =
-		`forgot password email:${email}`;
+	const key = `forgot password email:${email}`;
 
-	const redisOtp =
-		await redisClient.get(key);
+	const redisOtp = await redisClient.get(key);
 
 	if (!redisOtp) {
-		throw new Error(
-			"Invalid or expired OTP",
-		);
+		throw new Error("Invalid or expired OTP");
 	}
 
 	if (redisOtp !== otp) {
-		throw new Error(
-			"OTP does not match",
-		);
+		throw new Error("OTP does not match");
 	}
 
-	const hashedNewPassword =
-		await bcrypt.hash(
-			newPassword,
-			Number(config.bcrypt_salt_rounds),
-		);
+	const hashedNewPassword = await bcrypt.hash(
+		newPassword,
+		Number(config.bcrypt_salt_rounds),
+	);
 
 	await prisma.user.update({
 		where: {
@@ -771,17 +668,14 @@ const resetPassword = async (
 		"src/app/templates/passwordChanged.ejs",
 	);
 
-	const html = await ejs.renderFile(
-		templatePath,
-		{
-			name: user.name,
-		},
-	);
+	const html = await ejs.renderFile(templatePath, {
+		name: user.name,
+	});
 
 	await transporter.sendMail({
-		from:config.sender_email,
+		from: config.sender_email,
 		to: user.email,
-		subject:"Password Changed Successfully",
+		subject: "Password Changed Successfully",
 		html,
 	});
 
@@ -790,16 +684,9 @@ const resetPassword = async (
 	};
 };
 
-
-
-const logoutUser = async (
-	token: string | undefined,
-) => {
-
+const logoutUser = async (token: string | undefined) => {
 	return null;
 };
-
-
 
 export const AuthService = {
 	registerStudent,
@@ -812,4 +699,3 @@ export const AuthService = {
 	resetPassword,
 	logoutUser,
 };
-

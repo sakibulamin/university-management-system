@@ -4,8 +4,11 @@ import { transporter } from "./app/lib/nodemailer";
 import prisma from "./app/lib/prisma";
 import { redisClient } from "./app/lib/redis";
 
-import { seedTesterAdmin, seedTesterInstructor, seedTesterStudent } from "./app/utils/seed";
-
+import {
+	seedTesterAdmin,
+	seedTesterInstructor,
+	seedTesterStudent,
+} from "./app/utils/seed";
 
 const PORT = config.port;
 
@@ -14,19 +17,14 @@ const main = async () => {
 		await prisma.$connect();
 
 		await redisClient.connect();
-		console.log("redis conncet successfully!")
+		console.log("redis conncet successfully!");
 
 		await transporter.verify();
-		console.log("nodemailer connect successfully")
-		
+		console.log("nodemailer connect successfully");
+
 		await seedTesterAdmin();
 		await seedTesterStudent();
 		await seedTesterInstructor();
- 
-
-
-
-
 
 		console.log("Connected to the database successfully.");
 		app.listen(PORT, () => {
