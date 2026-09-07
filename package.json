@@ -34,7 +34,7 @@
     "http-status": "^2.1.0",
     "js-crypto-random": "^1.0.5",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.2.0",
+    "multer": "^2.3.0",
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.5",
     "pg": "^8.22.0",
