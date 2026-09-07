@@ -1,42 +1,45 @@
 import { Router } from "express";
-import checkAuth, { Role } from "../../middleware/checkAuth.js";
+
 import validateRequest from "../../middleware/validateRequest.js";
 import { PaymentController } from "./payment.controller.js";
 import { PaymentValidation } from "./payment.validation.js";
+import { Role } from "../../../../generated/prisma/enums.js";
+import { auth } from "../../middleware/checkAuth.js";
 
 const router = Router();
 
 router.post(
 	"/initiate",
-	checkAuth(Role.STUDENT),
+	auth(Role.STUDENT),
 	validateRequest(PaymentValidation.InitiatePaymentZodSchema),
 	PaymentController.initiatePayment,
 );
 
 router.post(
 	"/success",
-	checkAuth(Role.STUDENT),
+	auth(Role.STUDENT),
 	validateRequest(PaymentValidation.PaymentCallbackZodSchema),
-	PaymentController.handleSuccessCallback,
+	PaymentController.successCallback,
 );
 
 router.post(
 	"/fail",
-	checkAuth(Role.STUDENT),
+	auth(Role.STUDENT),
 	validateRequest(PaymentValidation.PaymentCallbackZodSchema),
-	PaymentController.handleFailCallback,
+	PaymentController.failCallback,
 );
 
 router.post(
 	"/cancel",
-	checkAuth(Role.STUDENT),
+	auth(Role.STUDENT),
 	validateRequest(PaymentValidation.PaymentCallbackZodSchema),
-	PaymentController.handleCancelCallback,
+	PaymentController.cancelCallback,
 );
 
-// Static path registered before the dynamic "/:id" pattern.
-router.get("/my-history", checkAuth(Role.STUDENT), PaymentController.getMyPaymentHistory);
-
-router.get("/:id", checkAuth(Role.STUDENT, Role.ADMIN), PaymentController.getPaymentById);
+router.get(
+	"/:id",
+	auth(Role.STUDENT, Role.ADMIN),
+	PaymentController.getPaymentById,
+);
 
 export const PaymentRoutes = router;

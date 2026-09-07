@@ -1,48 +1,64 @@
 import crypto from "node:crypto";
 import httpStatus from "http-status";
-import {
-	PaymentGateway,
-	PaymentStatus,
-	Prisma,
-	Role,
-} from "../../../generated/prisma/index.js";
+
 import type { TAuthUser } from "../../interfaces/index.js";
+
 import { bkash } from "../../lib/bkash.js";
 import config from "../../config/index.js";
 import prisma from "../../lib/prisma.js";
 import AppError from "../../utils/AppError.js";
-import { createAuditLog } from "../../utils/auditLog.js";
-import { paginationHelper } from "../../utils/paginationHelper.js";
 import type {
 	IInitiatePaymentPayload,
 	IPaymentCallbackPayload,
-	IPaymentFilters,
 } from "./payment.interface.js";
 
-const ALLOWED_SORT_FIELDS = ["createdAt", "amount"];
+import {
+	PaymentGateway,
+	PaymentStatus,
+	Role,
+} from "../../../../generated/prisma/enums.js";
+
+import { Prisma } from "../../../../generated/prisma/client.js";
+import { createAuditLog } from "../../utils/auditLog.js";
 
 const generateMerchantInvoiceNumber = () => {
 	const timestamp = Date.now();
 	const randomPart = crypto.randomInt(1000, 9999);
+
 	return `INV-${timestamp}-${randomPart}`;
 };
 
-const assertOwnsPayment = async (actor: TAuthUser, payment: { studentId: string }) => {
+const assertOwnsPayment = async (
+	actor: TAuthUser,
+	payment: {
+		studentId: string;
+	},
+) => {
 	if (actor.role === Role.ADMIN) {
 		return;
 	}
 
 	const student = await prisma.student.findFirst({
-		where: { userId: actor.id, isDeleted: false },
+		where: {
+			userId: actor.id,
+			isDeleted: false,
+		},
 	});
 
 	if (!student || student.id !== payment.studentId) {
-		throw new AppError(httpStatus.FORBIDDEN, "You do not have access to this payment");
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"You do not have access to this payment",
+		);
 	}
 };
 
 const findPaymentByGatewayId = async (bkashPaymentID: string) => {
-	const payment = await prisma.payment.findUnique({ where: { bkashPaymentID } });
+	const payment = await prisma.payment.findUnique({
+		where: {
+			bkashPaymentID,
+		},
+	});
 
 	if (!payment) {
 		throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
@@ -51,12 +67,15 @@ const findPaymentByGatewayId = async (bkashPaymentID: string) => {
 	return payment;
 };
 
-// ---------------------------------------------------------------------------
-// Initiate Payment (STUDENT — self only)
-// ---------------------------------------------------------------------------
-const initiatePayment = async (payload: IInitiatePaymentPayload, actor: TAuthUser) => {
+const initiatePayment = async (
+	payload: IInitiatePaymentPayload,
+	actor: TAuthUser,
+) => {
 	const student = await prisma.student.findFirst({
-		where: { userId: actor.id, isDeleted: false },
+		where: {
+			userId: actor.id,
+			isDeleted: false,
+		},
 	});
 
 	if (!student) {
@@ -87,25 +106,40 @@ const initiatePayment = async (payload: IInitiatePaymentPayload, actor: TAuthUse
 			callbackURL: `${config.frontend_url}/payment/callback`,
 		});
 	} catch (error) {
+		
+			console.error("Unknown error:", error);
+		
+
+
+
 		await prisma.payment.update({
-			where: { id: payment.id },
+			where: {
+				id: payment.id,
+			},
 			data: {
 				status: PaymentStatus.FAILED,
 				failureReason:
-					error instanceof Error ? error.message : "bKash create payment failed",
+					error instanceof Error
+						? error.message
+						: "bKash create payment failed",
 			},
 		});
 
 		throw new AppError(
 			httpStatus.BAD_GATEWAY,
-			"Failed to initiate payment with bKash. Please try again.",
+			error instanceof Error
+				? error.message
+				: "Failed to initiate payment with bKash",
 		);
 	}
 
-	const updated = await prisma.payment.update({
-		where: { id: payment.id },
+	const updatedPayment = await prisma.payment.update({
+		where: {
+			id: payment.id,
+		},
 		data: {
 			bkashPaymentID: createResponse.paymentID,
+
 			createResponse: createResponse as unknown as Prisma.InputJsonValue,
 		},
 	});
@@ -114,23 +148,20 @@ const initiatePayment = async (payload: IInitiatePaymentPayload, actor: TAuthUse
 		userId: actor.id,
 		action: "PAYMENT_INITIATED",
 		entity: "Payment",
-		entityId: updated.id,
-		details: { amount: updated.amount, merchantInvoiceNumber },
+		entityId: updatedPayment.id,
+		details: { amount: updatedPayment.amount, merchantInvoiceNumber },
 	});
 
 	return {
-		paymentId: updated.id,
+		paymentId: updatedPayment.id,
 		bkashPaymentID: createResponse.paymentID,
 		bkashURL: createResponse.bkashURL,
-		amount: updated.amount,
+		amount: updatedPayment.amount,
 		merchantInvoiceNumber,
 	};
 };
 
-// ---------------------------------------------------------------------------
-// Success Callback (STUDENT — own payment; idempotent + duplicate-safe)
-// ---------------------------------------------------------------------------
-const handleSuccessCallback = async (
+const successCallback = async (
 	payload: IPaymentCallbackPayload,
 	actor: TAuthUser,
 ) => {
@@ -139,7 +170,6 @@ const handleSuccessCallback = async (
 	await assertOwnsPayment(actor, payment);
 
 	if (payment.status === PaymentStatus.PAID) {
-		// Already processed — never call bKash execute twice for one payment.
 		return payment;
 	}
 
@@ -150,14 +180,33 @@ const handleSuccessCallback = async (
 		);
 	}
 
-	const executeResponse = await bkash.executePayment(payload.paymentID);
+	let executeResponse: Awaited<ReturnType<typeof bkash.executePayment>>;
 
-	if (executeResponse.transactionStatus !== "Completed" || !executeResponse.trxID) {
+	try {
+		executeResponse = await bkash.executePayment(payload.paymentID);
+	} catch (error) {
+		throw new AppError(
+			httpStatus.BAD_GATEWAY,
+			error instanceof Error
+				? error.message
+				: "Failed to execute bKash payment",
+		);
+	}
+
+	if (
+		executeResponse.transactionStatus !== "Completed" ||
+		!executeResponse.trxID
+	) {
 		await prisma.payment.update({
-			where: { id: payment.id },
+			where: {
+				id: payment.id,
+			},
 			data: {
 				status: PaymentStatus.FAILED,
-				failureReason: executeResponse.statusMessage ?? "Payment was not completed",
+
+				failureReason:
+					executeResponse.statusMessage ?? "Payment was not completed",
+
 				executeResponse: executeResponse as unknown as Prisma.InputJsonValue,
 			},
 		});
@@ -168,20 +217,26 @@ const handleSuccessCallback = async (
 		);
 	}
 
-	// Compare-and-swap: only the first caller to see PENDING can win this
-	// update. A concurrent duplicate call gets count === 0 below.
 	const updateResult = await prisma.payment.updateMany({
-		where: { id: payment.id, status: PaymentStatus.PENDING },
+		where: {
+			id: payment.id,
+			status: PaymentStatus.PENDING,
+		},
 		data: {
 			status: PaymentStatus.PAID,
+
 			bkashTrxID: executeResponse.trxID,
+
 			executeResponse: executeResponse as unknown as Prisma.InputJsonValue,
+
 			paidAt: new Date(),
 		},
 	});
 
 	const finalPayment = await prisma.payment.findUniqueOrThrow({
-		where: { id: payment.id },
+		where: {
+			id: payment.id,
+		},
 	});
 
 	if (updateResult.count > 0) {
@@ -197,25 +252,30 @@ const handleSuccessCallback = async (
 	return finalPayment;
 };
 
-// ---------------------------------------------------------------------------
-// Fail Callback (STUDENT — own payment)
-// ---------------------------------------------------------------------------
-const handleFailCallback = async (payload: IPaymentCallbackPayload, actor: TAuthUser) => {
+const failCallback = async (
+	payload: IPaymentCallbackPayload,
+	actor: TAuthUser,
+) => {
 	const payment = await findPaymentByGatewayId(payload.paymentID);
 
 	await assertOwnsPayment(actor, payment);
 
 	if (payment.status === PaymentStatus.PAID) {
-		throw new AppError(httpStatus.BAD_REQUEST, "Cannot mark a completed payment as failed");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot mark a completed payment as failed",
+		);
 	}
 
 	if (payment.status !== PaymentStatus.PENDING) {
-		// Already FAILED/CANCELLED — idempotent, no-op.
 		return payment;
 	}
 
 	const updateResult = await prisma.payment.updateMany({
-		where: { id: payment.id, status: PaymentStatus.PENDING },
+		where: {
+			id: payment.id,
+			status: PaymentStatus.PENDING,
+		},
 		data: {
 			status: PaymentStatus.FAILED,
 			failureReason: "Payment failed on the bKash gateway",
@@ -223,7 +283,9 @@ const handleFailCallback = async (payload: IPaymentCallbackPayload, actor: TAuth
 	});
 
 	const finalPayment = await prisma.payment.findUniqueOrThrow({
-		where: { id: payment.id },
+		where: {
+			id: payment.id,
+		},
 	});
 
 	if (updateResult.count > 0) {
@@ -238,10 +300,7 @@ const handleFailCallback = async (payload: IPaymentCallbackPayload, actor: TAuth
 	return finalPayment;
 };
 
-// ---------------------------------------------------------------------------
-// Cancel Callback (STUDENT — own payment)
-// ---------------------------------------------------------------------------
-const handleCancelCallback = async (
+const cancelCallback = async (
 	payload: IPaymentCallbackPayload,
 	actor: TAuthUser,
 ) => {
@@ -261,7 +320,10 @@ const handleCancelCallback = async (
 	}
 
 	const updateResult = await prisma.payment.updateMany({
-		where: { id: payment.id, status: PaymentStatus.PENDING },
+		where: {
+			id: payment.id,
+			status: PaymentStatus.PENDING,
+		},
 		data: {
 			status: PaymentStatus.CANCELLED,
 			cancelledAt: new Date(),
@@ -269,7 +331,9 @@ const handleCancelCallback = async (
 	});
 
 	const finalPayment = await prisma.payment.findUniqueOrThrow({
-		where: { id: payment.id },
+		where: {
+			id: payment.id,
+		},
 	});
 
 	if (updateResult.count > 0) {
@@ -280,15 +344,15 @@ const handleCancelCallback = async (
 			entityId: payment.id,
 		});
 	}
-
 	return finalPayment;
 };
 
-// ---------------------------------------------------------------------------
-// Get Payment by ID (STUDENT own only; ADMIN any)
-// ---------------------------------------------------------------------------
 const getPaymentById = async (id: string, actor: TAuthUser) => {
-	const payment = await prisma.payment.findUnique({ where: { id } });
+	const payment = await prisma.payment.findUnique({
+		where: {
+			id,
+		},
+	});
 
 	if (!payment) {
 		throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
@@ -299,47 +363,10 @@ const getPaymentById = async (id: string, actor: TAuthUser) => {
 	return payment;
 };
 
-// ---------------------------------------------------------------------------
-// My Payment History (STUDENT — own only)
-// ---------------------------------------------------------------------------
-const getMyPaymentHistory = async (userId: string, filters: IPaymentFilters) => {
-	const student = await prisma.student.findFirst({
-		where: { userId, isDeleted: false },
-	});
-
-	if (!student) {
-		throw new AppError(httpStatus.NOT_FOUND, "Student profile not found");
-	}
-
-	const { page, limit, skip, sortBy, sortOrder } =
-		paginationHelper.calculatePagination(filters);
-	const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
-
-	const andConditions: Prisma.PaymentWhereInput[] = [{ studentId: student.id }];
-
-	if (filters.status) {
-		andConditions.push({ status: filters.status as PaymentStatus });
-	}
-
-	const where: Prisma.PaymentWhereInput = { AND: andConditions };
-	const orderBy = { [safeSortBy]: sortOrder } as Prisma.PaymentOrderByWithRelationInput;
-
-	const [data, total] = await Promise.all([
-		prisma.payment.findMany({ where, skip, take: limit, orderBy }),
-		prisma.payment.count({ where }),
-	]);
-
-	return {
-		meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-		data,
-	};
-};
-
 export const PaymentService = {
 	initiatePayment,
-	handleSuccessCallback,
-	handleFailCallback,
-	handleCancelCallback,
+	successCallback,
+	failCallback,
+	cancelCallback,
 	getPaymentById,
-	getMyPaymentHistory,
 };

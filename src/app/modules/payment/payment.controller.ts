@@ -1,110 +1,82 @@
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
-import AppError from "../../utils/AppError.js";
-import { catchAsync } from "../../utils/catchAsync.js";
-import sendResponse from "../../utils/sendResponse.js";
-import type { IPaymentFilters } from "./payment.interface.js";
-import { PaymentService } from "./payment.service.js";
+
+import { catchAsync } from "../../utils/catchAsync";
+import sendResponse from "../../utils/sendResponse";
+
+import { PaymentService } from "./payment.service";
 
 const initiatePayment = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
-		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
-	}
+	const user = req.user!;
 
-	const result = await PaymentService.initiatePayment(req.body, req.user);
+	const result = await PaymentService.initiatePayment(req.body, user);
 
 	sendResponse(res, {
+		statusCode: httpStatus.OK,
 		success: true,
-		statusCode: httpStatus.CREATED,
-		message: "Payment initiated successfully",
+		message: "Payment Initiated Successfully",
 		data: result,
 	});
 });
 
-const handleSuccessCallback = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
-		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
-	}
+const successCallback = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user!;
+	const payload = req.body;
 
-	const result = await PaymentService.handleSuccessCallback(req.body, req.user);
+	const result = await PaymentService.successCallback(payload, user);
 
 	sendResponse(res, {
-		success: true,
 		statusCode: httpStatus.OK,
-		message: "Payment completed successfully",
+		success: true,
+		message: "Payment Completed Successfully",
 		data: result,
 	});
 });
 
-const handleFailCallback = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
-		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
-	}
+const failCallback = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user!;
 
-	const result = await PaymentService.handleFailCallback(req.body, req.user);
+	const result = await PaymentService.failCallback(req.body, user);
 
 	sendResponse(res, {
-		success: true,
 		statusCode: httpStatus.OK,
-		message: "Payment marked as failed",
+		success: true,
+		message: "Payment Failed Successfully",
 		data: result,
 	});
 });
 
-const handleCancelCallback = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
-		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
-	}
+const cancelCallback = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user!;
 
-	const result = await PaymentService.handleCancelCallback(req.body, req.user);
+	const result = await PaymentService.cancelCallback(req.body, user);
 
 	sendResponse(res, {
-		success: true,
 		statusCode: httpStatus.OK,
-		message: "Payment cancelled",
+		success: true,
+		message: "Payment Cancelled Successfully",
 		data: result,
 	});
 });
 
 const getPaymentById = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
-		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
-	}
+	const id = req.params.id as string;
+	const user = req.user!;
 
-	const result = await PaymentService.getPaymentById(req.params.id, req.user);
+	const result = await PaymentService.getPaymentById(id, user);
 
 	sendResponse(res, {
-		success: true,
 		statusCode: httpStatus.OK,
-		message: "Payment retrieved successfully",
+		success: true,
+		message: "Payment Retrieved Successfully",
 		data: result,
-	});
-});
-
-const getMyPaymentHistory = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
-		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
-	}
-
-	const result = await PaymentService.getMyPaymentHistory(
-		req.user.id,
-		req.query as unknown as IPaymentFilters,
-	);
-
-	sendResponse(res, {
-		success: true,
-		statusCode: httpStatus.OK,
-		message: "Payment history retrieved successfully",
-		meta: result.meta,
-		data: result.data,
 	});
 });
 
 export const PaymentController = {
 	initiatePayment,
-	handleSuccessCallback,
-	handleFailCallback,
-	handleCancelCallback,
+	successCallback,
+	failCallback,
+	cancelCallback,
 	getPaymentById,
-	getMyPaymentHistory,
 };
