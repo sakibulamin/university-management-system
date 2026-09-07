@@ -1,4 +1,4 @@
-import type { Role } from "../../../generated/prisma/index.js";
+import { Role } from "../../../../generated/prisma/enums";
 
 export interface IUpdateUserRolePayload {
 	role: Role;

@@ -7,7 +7,9 @@ import { AdminService } from "./admin.service.js";
 import type { IAuditLogFilters, IUserFilters } from "./admin.interface.js";
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-	const result = await AdminService.getAllUsers(req.query as unknown as IUserFilters);
+	const result = await AdminService.getAllUsers(
+		req.query as unknown as IUserFilters,
+	);
 
 	sendResponse(res, {
 		success: true,
@@ -19,11 +21,14 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateUserRole = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const params = req.params.id as string;
+	const payload = req.body;
 	if (!req.user) {
 		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
 	}
 
-	const result = await AdminService.updateUserRole(req.params.id, req.body, req.user);
+	const result = await AdminService.updateUserRole(params, payload, user!);
 
 	sendResponse(res, {
 		success: true,
@@ -34,11 +39,13 @@ const updateUserRole = catchAsync(async (req: Request, res: Response) => {
 });
 
 const blockUser = catchAsync(async (req: Request, res: Response) => {
-	if (!req.user) {
+	const user = req.user;
+	const params = req.params.id as string;
+	if (!user) {
 		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
 	}
 
-	const result = await AdminService.blockUser(req.params.id, req.user);
+	const result = await AdminService.blockUser(params, user);
 
 	sendResponse(res, {
 		success: true,
@@ -49,11 +56,13 @@ const blockUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const unblockUser = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const params = req.params.id as string;
 	if (!req.user) {
 		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
 	}
 
-	const result = await AdminService.unblockUser(req.params.id, req.user);
+	const result = await AdminService.unblockUser(params, user!);
 
 	sendResponse(res, {
 		success: true,
@@ -64,11 +73,13 @@ const unblockUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const params = req.params.id as string;
 	if (!req.user) {
 		throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
 	}
 
-	const result = await AdminService.deleteUser(req.params.id, req.user);
+	const result = await AdminService.deleteUser(params, user!);
 
 	sendResponse(res, {
 		success: true,
@@ -90,7 +101,9 @@ const getDashboardStats = catchAsync(async (_req: Request, res: Response) => {
 });
 
 const getAuditLogs = catchAsync(async (req: Request, res: Response) => {
-	const result = await AdminService.getAuditLogs(req.query as unknown as IAuditLogFilters);
+	const result = await AdminService.getAuditLogs(
+		req.query as unknown as IAuditLogFilters,
+	);
 
 	sendResponse(res, {
 		success: true,

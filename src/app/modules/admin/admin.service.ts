@@ -1,23 +1,22 @@
 import httpStatus from "http-status";
-import {
-	EnrollmentStatus,
-	PaymentStatus,
-	Prisma,
-	type Role,
-	SemesterStatus,
-	UserStatus,
-} from "../../../generated/prisma/index.js";
+
 import type { TAuthUser } from "../../interfaces/index.js";
-import prisma from "../../lib/prisma.js";
-import redisClient from "../../lib/redis.js";
+
 import AppError from "../../utils/AppError.js";
 import { createAuditLog } from "../../utils/auditLog.js";
 import { paginationHelper } from "../../utils/paginationHelper.js";
-import type {
+import {
+	Prisma,
+	Role,
+	UserStatus,
+} from "../../../../generated/prisma/client.js";
+import {
 	IAuditLogFilters,
 	IUpdateUserRolePayload,
 	IUserFilters,
 } from "./admin.interface.js";
+import prisma from "../../lib/prisma.js";
+import { redisClient } from "../../lib/redis.js";
 
 const USER_SORT_FIELDS = ["name", "email", "createdAt"];
 const AUDIT_LOG_SORT_FIELDS = ["createdAt"];
@@ -25,7 +24,6 @@ const AUDIT_LOG_SORT_FIELDS = ["createdAt"];
 const DASHBOARD_CACHE_KEY = "admin:dashboard-stats";
 const DASHBOARD_CACHE_TTL_SECONDS = 30;
 
-// Deliberately excludes password and googleId.
 const USER_SELECT = {
 	id: true,
 	name: true,
@@ -40,19 +38,6 @@ const USER_SELECT = {
 	updatedAt: true,
 };
 
-// Revokes any live refresh tokens for a user — belt-and-suspenders on top
-// of checkAuth/refresh already re-checking User.status/isDeleted on every
-// call, so a blocked/deleted user can't mint a new access token either.
-const revokeAllRefreshTokens = async (userId: string) => {
-	await prisma.refreshToken.updateMany({
-		where: { userId, revokedAt: null },
-		data: { revokedAt: new Date() },
-	});
-};
-
-// ---------------------------------------------------------------------------
-// Get All Users
-// ---------------------------------------------------------------------------
 const getAllUsers = async (filters: IUserFilters) => {
 	const { page, limit, skip, sortBy, sortOrder } =
 		paginationHelper.calculatePagination(filters);
@@ -78,10 +63,18 @@ const getAllUsers = async (filters: IUserFilters) => {
 	}
 
 	const where: Prisma.UserWhereInput = { AND: andConditions };
-	const orderBy = { [safeSortBy]: sortOrder } as Prisma.UserOrderByWithRelationInput;
+	const orderBy = {
+		[safeSortBy]: sortOrder,
+	} as Prisma.UserOrderByWithRelationInput;
 
 	const [data, total] = await Promise.all([
-		prisma.user.findMany({ where, skip, take: limit, orderBy, select: USER_SELECT }),
+		prisma.user.findMany({
+			where,
+			skip,
+			take: limit,
+			orderBy,
+			select: USER_SELECT,
+		}),
 		prisma.user.count({ where }),
 	]);
 
@@ -91,16 +84,16 @@ const getAllUsers = async (filters: IUserFilters) => {
 	};
 };
 
-// ---------------------------------------------------------------------------
-// Update User Role
-// ---------------------------------------------------------------------------
 const updateUserRole = async (
 	id: string,
 	payload: IUpdateUserRolePayload,
 	actor: TAuthUser,
 ) => {
 	if (actor.id === id) {
-		throw new AppError(httpStatus.BAD_REQUEST, "You cannot change your own role");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"You cannot change your own role",
+		);
 	}
 
 	const user = await prisma.user.findFirst({ where: { id, isDeleted: false } });
@@ -133,12 +126,12 @@ const updateUserRole = async (
 	return result;
 };
 
-// ---------------------------------------------------------------------------
-// Block User
-// ---------------------------------------------------------------------------
 const blockUser = async (id: string, actor: TAuthUser) => {
 	if (actor.id === id) {
-		throw new AppError(httpStatus.BAD_REQUEST, "You cannot block your own account");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"You cannot block your own account",
+		);
 	}
 
 	const user = await prisma.user.findFirst({ where: { id, isDeleted: false } });
@@ -157,8 +150,6 @@ const blockUser = async (id: string, actor: TAuthUser) => {
 		select: USER_SELECT,
 	});
 
-	await revokeAllRefreshTokens(id);
-
 	await createAuditLog({
 		userId: actor.id,
 		action: "USER_BLOCKED",
@@ -169,9 +160,6 @@ const blockUser = async (id: string, actor: TAuthUser) => {
 	return result;
 };
 
-// ---------------------------------------------------------------------------
-// Unblock User
-// ---------------------------------------------------------------------------
 const unblockUser = async (id: string, actor: TAuthUser) => {
 	const user = await prisma.user.findFirst({ where: { id, isDeleted: false } });
 
@@ -199,12 +187,12 @@ const unblockUser = async (id: string, actor: TAuthUser) => {
 	return result;
 };
 
-// ---------------------------------------------------------------------------
-// Soft Delete User
-// ---------------------------------------------------------------------------
 const deleteUser = async (id: string, actor: TAuthUser) => {
 	if (actor.id === id) {
-		throw new AppError(httpStatus.BAD_REQUEST, "You cannot delete your own account");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"You cannot delete your own account",
+		);
 	}
 
 	const user = await prisma.user.findFirst({ where: { id, isDeleted: false } });
@@ -215,11 +203,13 @@ const deleteUser = async (id: string, actor: TAuthUser) => {
 
 	const result = await prisma.user.update({
 		where: { id },
-		data: { isDeleted: true, deletedAt: new Date(), status: UserStatus.DELETED },
+		data: {
+			isDeleted: true,
+			deletedAt: new Date(),
+			status: UserStatus.DELETED,
+		},
 		select: USER_SELECT,
 	});
-
-	await revokeAllRefreshTokens(id);
 
 	await createAuditLog({
 		userId: actor.id,
@@ -231,9 +221,6 @@ const deleteUser = async (id: string, actor: TAuthUser) => {
 	return result;
 };
 
-// ---------------------------------------------------------------------------
-// Dashboard Stats (30s Redis cache)
-// ---------------------------------------------------------------------------
 const getDashboardStats = async () => {
 	const cached = await redisClient.get(DASHBOARD_CACHE_KEY).catch(() => null);
 
@@ -247,51 +234,40 @@ const getDashboardStats = async () => {
 		totalDepartments,
 		totalCourses,
 		activeEnrollments,
-		activeSemester,
-		pendingPayments,
-		completedPayments,
-		blockedUsers,
 	] = await Promise.all([
 		prisma.student.count({ where: { isDeleted: false } }),
 		prisma.instructor.count({ where: { isDeleted: false } }),
 		prisma.department.count({ where: { isDeleted: false } }),
 		prisma.course.count({ where: { isDeleted: false } }),
-		prisma.enrollment.count({ where: { status: EnrollmentStatus.ACTIVE } }),
-		prisma.semester.findFirst({
-			where: { status: SemesterStatus.ACTIVE },
-			select: { id: true, name: true },
+		prisma.user.count({
+			where: { status: UserStatus.BLOCKED, isDeleted: false },
 		}),
-		prisma.payment.count({ where: { status: PaymentStatus.PENDING } }),
-		prisma.payment.count({ where: { status: PaymentStatus.PAID } }),
-		prisma.user.count({ where: { status: UserStatus.BLOCKED, isDeleted: false } }),
 	]);
 
 	const stats = {
 		totalStudents,
 		totalInstructors,
 		totalDepartments,
-		totalCourses,
-		activeEnrollments,
-		activeSemester,
-		pendingPayments,
-		completedPayments,
-		blockedUsers,
+		totalCourses
 	};
 
 	await redisClient
-		.setEx(DASHBOARD_CACHE_KEY, DASHBOARD_CACHE_TTL_SECONDS, JSON.stringify(stats))
+		.setEx(
+			DASHBOARD_CACHE_KEY,
+			DASHBOARD_CACHE_TTL_SECONDS,
+			JSON.stringify(stats),
+		)
 		.catch(() => undefined);
 
 	return stats;
 };
 
-// ---------------------------------------------------------------------------
-// Audit Logs
-// ---------------------------------------------------------------------------
 const getAuditLogs = async (filters: IAuditLogFilters) => {
 	const { page, limit, skip, sortBy, sortOrder } =
 		paginationHelper.calculatePagination(filters);
-	const safeSortBy = AUDIT_LOG_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+	const safeSortBy = AUDIT_LOG_SORT_FIELDS.includes(sortBy)
+		? sortBy
+		: "createdAt";
 
 	const andConditions: Prisma.AuditLogWhereInput[] = [];
 
@@ -310,7 +286,9 @@ const getAuditLogs = async (filters: IAuditLogFilters) => {
 	const where: Prisma.AuditLogWhereInput = andConditions.length
 		? { AND: andConditions }
 		: {};
-	const orderBy = { [safeSortBy]: sortOrder } as Prisma.AuditLogOrderByWithRelationInput;
+	const orderBy = {
+		[safeSortBy]: sortOrder,
+	} as Prisma.AuditLogOrderByWithRelationInput;
 
 	const [data, total] = await Promise.all([
 		prisma.auditLog.findMany({
