@@ -107,7 +107,7 @@ const initiatePayment = async (
 		});
 	} catch (error) {
 		
-			console.error("Unknown error:", error);
+	
 		
 
 

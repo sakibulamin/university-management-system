@@ -5,6 +5,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { AuthService } from "./auth.service";
 import type { TAuthUser } from "../../interfaces";
+import config from "../../config";
 
 const registerStudent = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
@@ -28,15 +29,15 @@ const verifiedEmail = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 		maxAge: 1000 * 60 * 60 * 24, // 1 day
 	});
 
 	res.cookie("refreshToken", refreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 	});
 
@@ -63,15 +64,15 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 		maxAge: 1000 * 60 * 60 * 24, // 1 day
 	});
 
 	res.cookie("refreshToken", refreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 	});
 
@@ -105,57 +106,113 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
 });
 
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
-	if (!req.cookies.refreshToken) {
-		throw new Error("Refresh token is missing");
-	}
+        if (!req.cookies?.refreshToken) {
+                return res.status(httpStatus.UNAUTHORIZED).json({
+                        success: false,
+                        statusCode: httpStatus.UNAUTHORIZED,
+                        message: "Refresh token is missing",
+                        data: null,
+                });
+        }
 
-	const result = await AuthService.refreshToken(req.cookies.refreshToken);
+        const result = await AuthService.refreshToken(
+                req.cookies.refreshToken,
+        );
 
-	const { accessToken, refreshToken: newRefreshToken } = result;
+        const { accessToken, refreshToken: newRefreshToken } = result;
 
-	res.cookie("accessToken", accessToken, {
-		httpOnly: true,
-		secure: false,
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24, // 1 day
-	});
+      
 
-	res.cookie("refreshToken", newRefreshToken, {
-		httpOnly: true,
-		secure: false,
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-	});
+        res.cookie("accessToken", accessToken, {
+               	httpOnly: true,
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
+                maxAge: 1000 * 60 * 60 * 24,
+        });
 
-	sendResponse(res, {
-		statusCode: httpStatus.OK,
-		success: true,
-		message: "New tokens generated successfully",
-		data: {
-			accessToken,
-			refreshToken: newRefreshToken,
-		},
-	});
+        res.cookie("refreshToken", newRefreshToken, {
+                	httpOnly: true,
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
+                maxAge: 1000 * 60 * 60 * 24 * 7,
+        });
+
+        sendResponse(res, {
+                statusCode: httpStatus.OK,
+                success: true,
+                message: "Tokens refreshed successfully",
+                data: {
+                        accessToken,
+                },
+        });
 });
+
+// const refreshToken = catchAsync(async (req: Request, res: Response) => {
+// 	if (!req.cookies.refreshToken) {
+// 		throw new Error("Refresh token is missing");
+// 	}
+
+// 	const result = await AuthService.refreshToken(req.cookies.refreshToken);
+
+// 	const { accessToken, refreshToken: newRefreshToken } = result;
+
+// 	res.cookie("accessToken", accessToken, {
+// 		httpOnly: true,
+// 		secure: config.node_env === "development" ? false : true,
+// 		sameSite: config.node_env === "development" ? "lax" : "none",
+// 		maxAge: 1000 * 60 * 60 * 24, // 1 day
+// 	});
+
+// 	res.cookie("refreshToken", newRefreshToken, {
+// 		httpOnly: true,
+// 		secure: config.node_env === "development" ? false : true,
+// 		sameSite: config.node_env === "development" ? "lax" : "none",
+// 		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+// 	});
+
+// 	sendResponse(res, {
+// 		statusCode: httpStatus.OK,
+// 		success: true,
+// 		message: "New tokens generated successfully",
+// 		data: {
+// 			accessToken,
+// 			refreshToken: newRefreshToken,
+// 		},
+// 	});
+// });
+
+
+// const refreshToken = catchAsync(async (req: Request, res: Response) => {
+
+
+// 	if (!req.cookies?.refreshToken) {
+// 		throw new Error("Refresh token is missing");
+// 	}
+
+// 	const result = await AuthService.refreshToken(req.cookies.refreshToken);
+
+
+
+// });
+
 
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
 
 	const result = await AuthService.googleLogin(payload);
-
-	const { accessToken, refreshToken } = result!;
+	const { accessToken, refreshToken } = result;
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 		maxAge: 1000 * 60 * 60 * 24, // 1 day
 	});
 
 	res.cookie("refreshToken", refreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 	});
 
@@ -203,14 +260,14 @@ const logout = catchAsync(async (req: Request, res: Response) => {
 
 	res.clearCookie("accessToken", {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 	});
 
 	res.clearCookie("refreshToken", {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
+		secure: config.node_env === "development" ? false : true,
+		sameSite: config.node_env === "development" ? "lax" : "none",
 	});
 
 	sendResponse(res, {

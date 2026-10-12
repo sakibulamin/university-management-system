@@ -366,52 +366,75 @@ const getMe = async (userId: string) => {
 	return user;
 };
 
+
+
 const refreshToken = async (token: string) => {
-	const verifiedRefreshToken = jwtUtils.verifyToken(
-		token,
-		config.jwt_refresh_secret,
-	);
 
-	if (!verifiedRefreshToken.success) {
-		throw new Error("Invalid refresh token");
+
+	try {
+	
+
+		const verifiedRefreshToken = jwtUtils.verifyToken(
+			token,
+			config.jwt_refresh_secret,
+		);
+
+
+		if (!verifiedRefreshToken.success) {
+			throw new Error("Invalid refresh token");
+		}
+
+		const data = verifiedRefreshToken.data as JwtPayload;
+
+	
+
+		const user = await prisma.user.findUnique({
+			where: {
+				id: data.userId as string,
+			},
+		});
+
+	
+
+		if (!user || user.isDeleted || user.status !== UserStatus.ACTIVE) {
+			throw new Error("User is inactive or not found");
+		}
+
+		const jwtPayload = {
+			userId: user.id,
+			name: user.name,
+			email: user.email,
+			role: user.role,
+		};
+
+
+
+		const accessToken = jwtUtils.createToken(
+			jwtPayload,
+			config.jwt_access_secret,
+			config.jwt_access_expires_in as SignOptions,
+		);
+
+		
+
+		const newRefreshToken = jwtUtils.createToken(
+			jwtPayload,
+			config.jwt_refresh_secret,
+			config.jwt_refresh_expires_in as SignOptions,
+		);
+
+
+
+		return {
+			accessToken,
+			refreshToken: newRefreshToken,
+		};
+	} catch (error) {
+		
+		throw error;
 	}
-
-	const data = verifiedRefreshToken.data as JwtPayload;
-
-	const user = await prisma.user.findUnique({
-		where: {
-			id: data.userId as string,
-		},
-	});
-
-	if (!user || user.isDeleted || user.status !== UserStatus.ACTIVE) {
-		throw new Error("User is inactive or not found");
-	}
-
-	const jwtPayload = {
-		userId: user.id,
-		name: user.name,
-		email: user.email,
-		role: user.role,
-	};
-
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
-	);
-
-	const newRefreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
-	);
-
-	return {
-		accessToken,
-		refreshToken: newRefreshToken,
-	};
 };
+
 
 const googleLogin = async (payload: IGoogleLoginPayload) => {
 	let googleIdTokenPayload: TokenPayload | null | undefined = null;
@@ -423,7 +446,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 
 		googleIdTokenPayload = ticket.getPayload();
 	} catch (error) {
-	
+
 		throw new Error("Invalid Or Expired Google Id Token");
 	}
 
@@ -446,9 +469,10 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 		},
 	});
 
+
 	let user = ifPatientExistWithGoogleAuth;
 
-	if (!ifPatientExistWithGoogleAuth) {
+	if (!user) {
 		const ifPatientExistWithCredentials = await prisma.user.findUnique({
 			where: {
 				email: googleIdTokenPayload.email,
@@ -474,18 +498,13 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 			}
 
 			user = await prisma.user.update({
-				where: {
-					id: ifPatientExistWithCredentials.id,
-				},
-
-				data: {
-					googleId: googleIdTokenPayload.sub,
-				},
+				where: { id: ifPatientExistWithCredentials.id },
+				data: { googleId: googleIdTokenPayload.sub },
 			});
 		} else {
 			user = await prisma.user.create({
 				data: {
-					name: googleIdTokenPayload.name,
+					name: googleIdTokenPayload.name!,
 					email: googleIdTokenPayload.email,
 					role: Role.STUDENT,
 					googleId: googleIdTokenPayload.sub,
@@ -493,7 +512,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 					emailVerified: true,
 					patient: {
 						create: {
-							name: googleIdTokenPayload.name,
+							name: googleIdTokenPayload.name!,
 							email: googleIdTokenPayload.email,
 						},
 					},
@@ -516,32 +535,34 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 				html,
 			});
 		}
-
-		const jwtPayload = {
-			userId: user.id,
-			name: user.name,
-			email: user.email,
-			role: user.role,
-		};
-
-		const accessToken = jwtUtils.createToken(
-			jwtPayload,
-			config.jwt_access_secret,
-			config.jwt_access_expires_in as SignOptions,
-		);
-
-		const refreshToken = jwtUtils.createToken(
-			jwtPayload,
-			config.jwt_refresh_secret,
-			config.jwt_refresh_expires_in as SignOptions,
-		);
-
-		return {
-			accessToken,
-			refreshToken,
-		};
 	}
+
+	// Existing Google user এবং নতুন/updated user—দুই ক্ষেত্রেই token তৈরি হবে।
+	const jwtPayload = {
+		userId: user.id,
+		name: user.name,
+		email: user.email,
+		role: user.role,
+	};
+
+	const accessToken = jwtUtils.createToken(
+		jwtPayload,
+		config.jwt_access_secret,
+		config.jwt_access_expires_in as SignOptions,
+	);
+
+	const refreshToken = jwtUtils.createToken(
+		jwtPayload,
+		config.jwt_refresh_secret,
+		config.jwt_refresh_expires_in as SignOptions,
+	);
+
+	return {
+		accessToken,
+		refreshToken,
+	};
 };
+
 
 const forgotPassword = async (payload: IForgotPasswordPayload) => {
 	const email = payload.email.trim().toLowerCase();

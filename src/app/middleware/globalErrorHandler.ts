@@ -70,19 +70,39 @@ const globalErrorHandler = (
 		message = error.message;
 		errorSources = [{ path: "", message: error.message }];
 	} else if (error instanceof Error) {
-		message = error.message;
-		errorSources = [{ path: "", message: error.message }];
-	}
+	message = error.message;
+	errorSources = [{ path: "", message: error.message }];
 
-	res.status(statusCode).json({
-		success: false,
-		statusCode,
-		message,
-		errors: errorSources,
-		...(config.env === "development" && error instanceof Error
-			? { stack: error.stack }
-			: {}),
-	});
+	if (
+		error.message ===
+		"You are not logged in. Please log in to access this resource." ||
+		error.message === "Token has expired" ||
+		error.message === "Invalid token"
+	) {
+		statusCode = httpStatus.UNAUTHORIZED;
+	} else if (
+		error.message ===
+		"Forbidden. You don't have permission to access this resource."
+	) {
+		statusCode = httpStatus.FORBIDDEN;
+	} else if (
+		error.message === "User not found" ||
+		error.message === "User not found. Please log in again."
+	) {
+		statusCode = httpStatus.NOT_FOUND;
+	}
+}
+
+
+res.status(statusCode).json({
+	success: false,
+	statusCode,
+	message,
+	errors: errorSources,
+	...(config.node_env === "development" && error instanceof Error
+		? { stack: error.stack }
+		: {}),
+});
 };
 
 export default globalErrorHandler;
